@@ -36,7 +36,7 @@ function PostComments({ postId }: { postId: number }) {
 
   const handleCreateComment = () => {
     if (!newComment.trim()) return;
-    createComment.mutate({ data: { postId, body: newComment } }, {
+    createComment.mutate({ postId, data: { body: newComment } }, {
       onSuccess: () => {
         setNewComment("");
         queryClient.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
@@ -133,7 +133,7 @@ export default function CommunityPage() {
 
   const handleCreatePost = () => {
     if (!newPostContent.trim() || !activeChannelId) return;
-    createPost.mutate({ data: { channelId: activeChannelId, body: newPostContent } }, {
+    createPost.mutate({ channelId: activeChannelId!, data: { body: newPostContent } }, {
       onSuccess: () => {
         setNewPostContent("");
         queryClient.invalidateQueries({ queryKey: getListPostsByChannelQueryKey(activeChannelId) });
@@ -254,7 +254,7 @@ export default function CommunityPage() {
                                   post.isPinned ? (
                                     <DropdownMenuItem onClick={() => {
                                       unpinPost.mutate({ postId: post.id }, {
-                                        onSuccess: () => queryClient.invalidateQueries({ queryKey: getListPostsByChannelQueryKey(activeChannelId) })
+                                        onSuccess: () => queryClient.invalidateQueries({ queryKey: getListPostsByChannelQueryKey(activeChannelId!) })
                                       });
                                     }}>
                                       <Pin className="h-4 w-4 mr-2" /> Unpin
@@ -262,7 +262,7 @@ export default function CommunityPage() {
                                   ) : (
                                     <DropdownMenuItem onClick={() => {
                                       pinPost.mutate({ postId: post.id }, {
-                                        onSuccess: () => queryClient.invalidateQueries({ queryKey: getListPostsByChannelQueryKey(activeChannelId) })
+                                        onSuccess: () => queryClient.invalidateQueries({ queryKey: getListPostsByChannelQueryKey(activeChannelId!) })
                                       });
                                     }}>
                                       <Pin className="h-4 w-4 mr-2" /> Pin
@@ -274,7 +274,7 @@ export default function CommunityPage() {
                                   onClick={() => {
                                     deletePost.mutate({ postId: post.id }, {
                                       onSuccess: () => {
-                                        queryClient.invalidateQueries({ queryKey: getListPostsByChannelQueryKey(activeChannelId) });
+                                        queryClient.invalidateQueries({ queryKey: getListPostsByChannelQueryKey(activeChannelId!) });
                                         toast({ title: "Post deleted" });
                                       }
                                     });
