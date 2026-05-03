@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { listUsers, createUserWithTempPassword, resetUserPassword, deactivateUser } from "../storage/users.js";
 import { requireAuth, requireAdmin } from "../middlewares/auth.js";
+import { validateBody } from "../validate.js";
+import { apiError } from "../errors.js";
+import { CreateUserBody } from "@workspace/api-zod";
 
 const router = Router();
 
@@ -11,14 +14,10 @@ router.get("/admin/users", async (_req, res) => {
   res.json(users.map(({ passwordHash: _h, ...u }) => u));
 });
 
-router.post("/admin/users", async (req, res) => {
-  const { email, name, role } = req.body ?? {};
-  if (!email || !name || !role) {
-    res.status(400).json({ error: "email, name, role required" });
-    return;
-  }
+router.post("/admin/users", validateBody(CreateUserBody), async (req, res) => {
+  const { email, name, role } = req.body;
   if (!["admin", "member"].includes(role)) {
-    res.status(400).json({ error: "role must be admin or member" });
+    apiError(res, 400, "role must be admin or member");
     return;
   }
   const { user, tempPassword } = await createUserWithTempPassword(email, name, role);
@@ -29,7 +28,7 @@ router.post("/admin/users", async (req, res) => {
 router.post("/admin/users/:id/reset-password", async (req, res) => {
   const userId = Number(req.params.id);
   if (isNaN(userId)) {
-    res.status(400).json({ error: "Invalid user id" });
+    apiError(res, 400, "Invalid user id");
     return;
   }
   const tempPassword = await resetUserPassword(userId);
@@ -39,7 +38,7 @@ router.post("/admin/users/:id/reset-password", async (req, res) => {
 router.patch("/admin/users/:id/deactivate", async (req, res) => {
   const userId = Number(req.params.id);
   if (isNaN(userId)) {
-    res.status(400).json({ error: "Invalid user id" });
+    apiError(res, 400, "Invalid user id");
     return;
   }
   await deactivateUser(userId);

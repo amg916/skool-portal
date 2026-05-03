@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { usePdfUpload } from "@/hooks/usePdfUpload";
 
 function getLessonIcon(type: string) {
   switch (type) {
@@ -77,33 +78,20 @@ export default function AdminLessons() {
     file: null
   });
 
-  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const { upload: uploadPdf, uploading: uploadingPdf } = usePdfUpload({
+    onError: () => toast({ title: "Failed to upload PDF", variant: "destructive" }),
+  });
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.subsectionId) return;
 
-    let uploadId = null;
+    let uploadId: number | null = null;
 
     if (formData.type === "pdf" && formData.file) {
-      setUploadingPdf(true);
-      try {
-        const fileData = new FormData();
-        fileData.append("file", formData.file);
-        const res = await fetch("/api/admin/uploads/pdf", { 
-          method: "POST", 
-          credentials: "include", 
-          body: fileData 
-        });
-        if (!res.ok) throw new Error("Upload failed");
-        const upload = await res.json();
-        uploadId = upload.id;
-      } catch (err) {
-        toast({ title: "Failed to upload PDF", variant: "destructive" });
-        setUploadingPdf(false);
-        return;
-      }
-      setUploadingPdf(false);
+      const result = await uploadPdf(formData.file);
+      if (!result) return;
+      uploadId = result.uploadId;
     }
 
     createLesson.mutate(
@@ -132,27 +120,12 @@ export default function AdminLessons() {
     e.preventDefault();
     if (!editingLesson) return;
     
-    let uploadId = undefined;
+    let uploadId: number | undefined = undefined;
 
     if (formData.type === "pdf" && formData.file) {
-      setUploadingPdf(true);
-      try {
-        const fileData = new FormData();
-        fileData.append("file", formData.file);
-        const res = await fetch("/api/admin/uploads/pdf", { 
-          method: "POST", 
-          credentials: "include", 
-          body: fileData 
-        });
-        if (!res.ok) throw new Error("Upload failed");
-        const upload = await res.json();
-        uploadId = upload.id;
-      } catch (err) {
-        toast({ title: "Failed to upload PDF", variant: "destructive" });
-        setUploadingPdf(false);
-        return;
-      }
-      setUploadingPdf(false);
+      const result = await uploadPdf(formData.file);
+      if (!result) return;
+      uploadId = result.uploadId;
     }
 
     updateLesson.mutate(

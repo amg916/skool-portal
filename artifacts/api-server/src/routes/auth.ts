@@ -3,23 +3,23 @@ import { getUserByEmail, setUserPassword } from "../storage/users.js";
 import { createSession, deleteSession } from "../storage/sessions.js";
 import { verifyPassword } from "../lib/auth.js";
 import { requireAuth } from "../middlewares/auth.js";
+import { loginLimit } from "../rateLimits.js";
+import { validateBody } from "../validate.js";
+import { apiError } from "../errors.js";
+import { LoginBody, ChangePasswordBody } from "@workspace/api-zod";
 
 const router = Router();
 
-router.post("/auth/login", async (req, res) => {
-  const { email, password } = req.body ?? {};
-  if (!email || !password) {
-    res.status(400).json({ error: "Email and password required" });
-    return;
-  }
+router.post("/auth/login", loginLimit, validateBody(LoginBody), async (req, res) => {
+  const { email, password } = req.body;
   const user = await getUserByEmail(email);
   if (!user || !user.isActive) {
-    res.status(401).json({ error: "Invalid credentials" });
+    apiError(res, 401, "Invalid credentials");
     return;
   }
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) {
-    res.status(401).json({ error: "Invalid credentials" });
+    apiError(res, 401, "Invalid credentials");
     return;
   }
   const token = await createSession(user.id);
@@ -46,19 +46,15 @@ router.get("/auth/me", requireAuth, async (req, res) => {
   res.json(safeUser);
 });
 
-router.post("/auth/change-password", requireAuth, async (req, res) => {
-  const { currentPassword, newPassword } = req.body ?? {};
-  if (!currentPassword || !newPassword) {
-    res.status(400).json({ error: "currentPassword and newPassword required" });
-    return;
-  }
+router.post("/auth/change-password", requireAuth, validateBody(ChangePasswordBody), async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
   const valid = await verifyPassword(currentPassword, req.user!.passwordHash);
   if (!valid) {
-    res.status(401).json({ error: "Current password is incorrect" });
+    apiError(res, 401, "Current password is incorrect");
     return;
   }
   if (newPassword.length < 8) {
-    res.status(400).json({ error: "New password must be at least 8 characters" });
+    apiError(res, 400, "New password must be at least 8 characters");
     return;
   }
   await setUserPassword(req.user!.id, newPassword);

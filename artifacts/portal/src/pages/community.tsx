@@ -23,6 +23,7 @@ import { formatDistanceToNow } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AdminOnlyNotice } from "@/components/community/AdminOnlyNotice";
 
 function PostComments({ postId }: { postId: number }) {
   const { data: comments, isLoading } = useListComments(postId, { query: { enabled: !!postId } });
@@ -70,8 +71,8 @@ function PostComments({ postId }: { postId: number }) {
                     {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                   </span>
                   {(user?.role === "admin" || user?.id === comment.authorId) && (
-                    <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteComment(comment.id)}>
-                      <Trash2 className="h-3 w-3" />
+                    <Button variant="ghost" size="icon" aria-label="Delete comment" className="h-4 w-4 text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring" onClick={() => handleDeleteComment(comment.id)}>
+                      <Trash2 className="h-3 w-3" aria-hidden="true" />
                     </Button>
                   )}
                 </div>
@@ -94,8 +95,8 @@ function PostComments({ postId }: { postId: number }) {
             }
           }}
         />
-        <Button size="icon" onClick={handleCreateComment} disabled={!newComment.trim() || createComment.isPending}>
-          {createComment.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        <Button size="icon" aria-label="Send comment" onClick={handleCreateComment} disabled={!newComment.trim() || createComment.isPending} className="focus-visible:ring-2 focus-visible:ring-ring">
+          {createComment.isPending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}
         </Button>
       </div>
     </div>
@@ -159,13 +160,15 @@ export default function CommunityPage() {
               <Link 
                 key={channel.id} 
                 href={`/community/${channel.id}`}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                aria-label={`${channel.name} channel${channel.adminsOnly ? " (admin only)" : ""}`}
+                aria-current={activeChannelId === channel.id ? "page" : undefined}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   activeChannelId === channel.id 
                     ? "bg-primary text-primary-foreground font-medium" 
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <Hash className="h-4 w-4" />
+                <Hash className="h-4 w-4" aria-hidden="true" />
                 {channel.name}
               </Link>
             ))}
@@ -179,8 +182,8 @@ export default function CommunityPage() {
           <>
             <div className="p-4 border-b border-border bg-card/50 flex flex-col justify-center sticky top-0 z-10 backdrop-blur-sm">
               <div className="flex items-center gap-2 text-lg font-bold text-foreground">
-                <Hash className="h-5 w-5 text-muted-foreground" />
-                {activeChannel.name}
+                <Hash className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                <h1 className="text-lg font-bold">{activeChannel.name}</h1>
               </div>
               {activeChannel.description && (
                 <p className="text-sm text-muted-foreground mt-1">{activeChannel.description}</p>
@@ -189,6 +192,9 @@ export default function CommunityPage() {
 
             <ScrollArea className="flex-1 p-4 md:p-6">
               <div className="max-w-3xl mx-auto space-y-6">
+                {activeChannel.adminsOnly && user?.role !== "admin" && (
+                  <AdminOnlyNotice />
+                )}
                 {canPost && (
                   <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
                     <Textarea 
@@ -239,8 +245,8 @@ export default function CommunityPage() {
                           {(user?.role === "admin" || user?.id === post.authorId) && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                  <MoreVertical className="h-4 w-4" />
+                                <Button variant="ghost" size="icon" aria-label="Post actions" className="h-8 w-8 text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring">
+                                  <MoreVertical className="h-4 w-4" aria-hidden="true" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
@@ -288,11 +294,13 @@ export default function CommunityPage() {
                         <div className="mt-4 flex items-center gap-4">
                           <Button 
                             variant="ghost" 
-                            size="sm" 
-                            className="text-muted-foreground hover:text-foreground -ml-2"
+                            size="sm"
+                            aria-label={`${expandedComments[post.id] ? "Hide" : "Show"} comments (${post.commentCount})`}
+                            aria-expanded={!!expandedComments[post.id]}
+                            className="text-muted-foreground hover:text-foreground -ml-2 focus-visible:ring-2 focus-visible:ring-ring"
                             onClick={() => setExpandedComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
                           >
-                            <MessageSquare className="h-4 w-4 mr-2" />
+                            <MessageSquare className="h-4 w-4 mr-2" aria-hidden="true" />
                             {post.commentCount} {post.commentCount === 1 ? 'Comment' : 'Comments'}
                           </Button>
                         </div>

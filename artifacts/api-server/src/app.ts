@@ -6,6 +6,8 @@ import path from "path";
 import fs from "fs";
 import { logger } from "./lib/logger.js";
 import router from "./routes/index.js";
+import { generalApiLimit } from "./rateLimits.js";
+import { errorHandler } from "./errors.js";
 
 const app: Express = express();
 
@@ -47,6 +49,7 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 }
 app.use("/uploads", express.static(UPLOAD_DIR));
 
-app.use("/api", router);
+app.use("/api", generalApiLimit, router);
+app.use(errorHandler);
 
 export default app;

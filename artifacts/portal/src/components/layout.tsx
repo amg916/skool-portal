@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { LogOut, BookOpen, MessageSquare, ShieldAlert, Zap } from "lucide-react";
 import { ReactNode } from "react";
+import { ariaLabel } from "@/components/a11y";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -27,44 +28,47 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 text-primary font-bold tracking-tight">
-              <Zap className="h-5 w-5" />
+            <Link href="/" aria-label="Portal home" className="flex items-center gap-2 text-primary font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+              <Zap className="h-5 w-5" aria-hidden="true" />
               <span>Portal</span>
             </Link>
             
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center gap-1" aria-label="Main navigation">
               <Link
                 href="/community"
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                aria-label="Community"
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   location.startsWith("/community") 
                     ? "bg-primary/10 text-primary" 
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <MessageSquare className="h-4 w-4" />
+                <MessageSquare className="h-4 w-4" aria-hidden="true" />
                 Community
               </Link>
               <Link
                 href="/school"
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                aria-label="School"
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   location.startsWith("/school") 
                     ? "bg-primary/10 text-primary" 
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <BookOpen className="h-4 w-4" />
+                <BookOpen className="h-4 w-4" aria-hidden="true" />
                 School
               </Link>
               {user.role === "admin" && (
                 <Link
                   href="/admin"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  aria-label="Admin panel"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                     location.startsWith("/admin") 
                       ? "bg-primary/10 text-primary" 
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
-                  <ShieldAlert className="h-4 w-4" />
+                  <ShieldAlert className="h-4 w-4" aria-hidden="true" />
                   Admin
                 </Link>
               )}
@@ -72,11 +76,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="text-sm hidden sm:block text-muted-foreground">
+            <div className="text-sm hidden sm:block text-muted-foreground" aria-label={`Signed in as ${user.name}`}>
               {user.name}
             </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-              <LogOut className="h-4 w-4 mr-2" />
+            <Button variant="ghost" size="sm" onClick={handleLogout} {...ariaLabel("Log out")} className="text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+              <LogOut className="h-4 w-4 mr-2" aria-hidden="true" />
               Logout
             </Button>
           </div>
