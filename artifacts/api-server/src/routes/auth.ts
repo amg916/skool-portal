@@ -25,9 +25,9 @@ router.post("/auth/login", loginLimit, validateBody(LoginBody), async (req, res)
   const token = await createSession(user.id);
   res.cookie("session_token", token, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "none",
     maxAge: 30 * 24 * 60 * 60 * 1000,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
   });
   const { passwordHash: _h, ...safeUser } = user;
   res.json(safeUser);
