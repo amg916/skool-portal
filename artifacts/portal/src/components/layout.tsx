@@ -6,6 +6,42 @@ import { LogOut, BookOpen, MessageSquare, ShieldAlert, Zap } from "lucide-react"
 import { ReactNode } from "react";
 import { ariaLabel } from "@/components/a11y";
 
+function BottomTabBar({ location, isAdmin }: { location: string; isAdmin: boolean }) {
+  const tabs = [
+    { href: "/community", label: "Community", icon: MessageSquare },
+    { href: "/school", label: "School", icon: BookOpen },
+    ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: ShieldAlert }] : []),
+  ];
+
+  return (
+    <nav
+      className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur-sm flex"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      aria-label="Mobile navigation"
+    >
+      {tabs.map(({ href, label, icon: Icon }) => {
+        const isActive = location.startsWith(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-label={label}
+            aria-current={isActive ? "page" : undefined}
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              isActive
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Icon className="h-5 w-5" aria-hidden="true" />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { data: user } = useGetMe();
@@ -86,9 +122,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="flex-1">
+      <main className="flex-1 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         {children}
       </main>
+      <BottomTabBar location={location} isAdmin={user.role === "admin"} />
     </div>
   );
 }
