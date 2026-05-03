@@ -3,20 +3,36 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Community & School Portal API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: channels
+    description: Community channels
+  - name: posts
+    description: Community posts
+  - name: comments
+    description: Post comments
+  - name: school
+    description: School content
+  - name: progress
+    description: Learning progress
+  - name: admin
+    description: Admin operations
+  - name: uploads
+    description: File uploads
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +40,776 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # Auth
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Password changed
+
+  # Channels
+  /channels:
+    get:
+      operationId: listChannels
+      tags: [channels]
+      summary: List all channels
+      responses:
+        "200":
+          description: List of channels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Channel"
+
+  /admin/channels:
+    post:
+      operationId: createChannel
+      tags: [channels, admin]
+      summary: Create a channel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChannelRequest"
+      responses:
+        "201":
+          description: Channel created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Channel"
+
+  /admin/channels/{channelId}:
+    patch:
+      operationId: updateChannel
+      tags: [channels, admin]
+      summary: Update a channel
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateChannelRequest"
+      responses:
+        "200":
+          description: Channel updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Channel"
+    delete:
+      operationId: deleteChannel
+      tags: [channels, admin]
+      summary: Delete a channel
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Channel deleted
+
+  /admin/channels/{channelId}/reorder:
+    post:
+      operationId: reorderChannel
+      tags: [channels, admin]
+      summary: Reorder a channel
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderRequest"
+      responses:
+        "200":
+          description: Reordered
+
+  # Posts
+  /channels/{channelId}/posts:
+    get:
+      operationId: listPostsByChannel
+      tags: [posts]
+      summary: List posts in a channel
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create a post
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostRequest"
+      responses:
+        "201":
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /posts/{postId}:
+    delete:
+      operationId: deletePost
+      tags: [posts]
+      summary: Delete a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /posts/{postId}/pin:
+    post:
+      operationId: pinPost
+      tags: [posts]
+      summary: Pin a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Pinned
+
+  /posts/{postId}/unpin:
+    post:
+      operationId: unpinPost
+      tags: [posts]
+      summary: Unpin a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unpinned
+
+  # Comments
+  /posts/{postId}/comments:
+    get:
+      operationId: listComments
+      tags: [comments]
+      summary: List comments on a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+    post:
+      operationId: createComment
+      tags: [comments]
+      summary: Create a comment
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
+  /comments/{commentId}:
+    delete:
+      operationId: deleteComment
+      tags: [comments]
+      summary: Delete a comment
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # School - Browse
+  /school/segments:
+    get:
+      operationId: listSegments
+      tags: [school]
+      summary: List all segments
+      responses:
+        "200":
+          description: List of segments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Segment"
+
+  /school/segments/{segmentId}/subsections:
+    get:
+      operationId: listSubsections
+      tags: [school]
+      summary: List subsections in a segment
+      parameters:
+        - name: segmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of subsections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Subsection"
+
+  /school/subsections/{subsectionId}/lessons:
+    get:
+      operationId: listLessons
+      tags: [school]
+      summary: List lessons in a subsection
+      parameters:
+        - name: subsectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of lessons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lesson"
+
+  /school/lessons/{lessonId}:
+    get:
+      operationId: getLesson
+      tags: [school]
+      summary: Get a lesson
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lesson detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  # School - Admin segments
+  /admin/school/segments:
+    post:
+      operationId: createSegment
+      tags: [school, admin]
+      summary: Create a segment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSegmentRequest"
+      responses:
+        "201":
+          description: Segment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Segment"
+
+  /admin/school/segments/{segmentId}:
+    patch:
+      operationId: updateSegment
+      tags: [school, admin]
+      summary: Update a segment
+      parameters:
+        - name: segmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSegmentRequest"
+      responses:
+        "200":
+          description: Segment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Segment"
+    delete:
+      operationId: deleteSegment
+      tags: [school, admin]
+      summary: Delete a segment
+      parameters:
+        - name: segmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/school/segments/{segmentId}/reorder:
+    post:
+      operationId: reorderSegment
+      tags: [school, admin]
+      summary: Reorder segment
+      parameters:
+        - name: segmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderRequest"
+      responses:
+        "200":
+          description: Reordered
+
+  # School - Admin subsections
+  /admin/school/subsections:
+    post:
+      operationId: createSubsection
+      tags: [school, admin]
+      summary: Create a subsection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubsectionRequest"
+      responses:
+        "201":
+          description: Subsection created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subsection"
+
+  /admin/school/subsections/{subsectionId}:
+    patch:
+      operationId: updateSubsection
+      tags: [school, admin]
+      summary: Update a subsection
+      parameters:
+        - name: subsectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSubsectionRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subsection"
+    delete:
+      operationId: deleteSubsection
+      tags: [school, admin]
+      summary: Delete a subsection
+      parameters:
+        - name: subsectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/school/subsections/{subsectionId}/reorder:
+    post:
+      operationId: reorderSubsection
+      tags: [school, admin]
+      summary: Reorder subsection
+      parameters:
+        - name: subsectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderRequest"
+      responses:
+        "200":
+          description: Reordered
+
+  # School - Admin lessons
+  /admin/school/lessons:
+    post:
+      operationId: createLesson
+      tags: [school, admin]
+      summary: Create a lesson
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLessonRequest"
+      responses:
+        "201":
+          description: Lesson created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  /admin/school/lessons/{lessonId}:
+    patch:
+      operationId: updateLesson
+      tags: [school, admin]
+      summary: Update a lesson
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLessonRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+    delete:
+      operationId: deleteLesson
+      tags: [school, admin]
+      summary: Delete a lesson
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/school/lessons/{lessonId}/reorder:
+    post:
+      operationId: reorderLesson
+      tags: [school, admin]
+      summary: Reorder lesson
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderRequest"
+      responses:
+        "200":
+          description: Reordered
+
+  # Progress
+  /progress/lessons/{lessonId}:
+    post:
+      operationId: toggleLessonCompletion
+      tags: [progress]
+      summary: Toggle lesson completion
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleCompletionRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonCompletion"
+
+  /progress/me:
+    get:
+      operationId: getMyProgress
+      tags: [progress]
+      summary: Get current user progress rollups
+      responses:
+        "200":
+          description: Progress data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressRollup"
+
+  /admin/progress:
+    get:
+      operationId: getAdminProgress
+      tags: [progress, admin]
+      summary: Get all users progress table
+      responses:
+        "200":
+          description: Admin progress table
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminProgressRow"
+
+  # Admin Users
+  /admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      summary: List all users
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [admin]
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created with temp password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUserResponse"
+
+  /admin/users/{userId}/reset-password:
+    post:
+      operationId: resetUserPassword
+      tags: [admin]
+      summary: Reset user password
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Password reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetPasswordResponse"
+
+  /admin/users/{userId}/deactivate:
+    patch:
+      operationId: deactivateUser
+      tags: [admin]
+      summary: Deactivate a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User deactivated
+
+  # Uploads
+  /admin/uploads/pdf:
+    post:
+      operationId: uploadPdf
+      tags: [uploads, admin]
+      summary: Upload a PDF file (multipart/form-data, field name "file")
+      responses:
+        "200":
+          description: Upload result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResult"
+
+  /admin/uploads/{uploadId}:
+    delete:
+      operationId: deleteUpload
+      tags: [uploads, admin]
+      summary: Delete an upload
+      parameters:
+        - name: uploadId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +820,480 @@ components:
       required:
         - status
 
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, member]
+        isActive:
+          type: boolean
+        forcePasswordChange:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - name
+        - role
+        - isActive
+        - forcePasswordChange
+        - createdAt
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    ChangePasswordRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+      required:
+        - currentPassword
+        - newPassword
+
+    CreateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, member]
+      required:
+        - email
+        - name
+        - role
+
+    CreateUserResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        tempPassword:
+          type: string
+      required:
+        - user
+        - tempPassword
+
+    ResetPasswordResponse:
+      type: object
+      properties:
+        tempPassword:
+          type: string
+      required:
+        - tempPassword
+
+    Channel:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        adminsOnly:
+          type: boolean
+        isDefault:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - adminsOnly
+        - isDefault
+        - sortOrder
+        - createdAt
+
+    CreateChannelRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        adminsOnly:
+          type: boolean
+      required:
+        - name
+
+    UpdateChannelRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        adminsOnly:
+          type: boolean
+
+    ReorderRequest:
+      type: object
+      properties:
+        direction:
+          type: string
+          enum: [up, down]
+      required:
+        - direction
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+        channelId:
+          type: integer
+        authorId:
+          type: integer
+        authorName:
+          type: string
+        body:
+          type: string
+        isPinned:
+          type: boolean
+        commentCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - channelId
+        - authorId
+        - authorName
+        - body
+        - isPinned
+        - commentCount
+        - createdAt
+
+    CreatePostRequest:
+      type: object
+      properties:
+        body:
+          type: string
+      required:
+        - body
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+        postId:
+          type: integer
+        authorId:
+          type: integer
+        authorName:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - postId
+        - authorId
+        - authorName
+        - body
+        - createdAt
+
+    CreateCommentRequest:
+      type: object
+      properties:
+        body:
+          type: string
+      required:
+        - body
+
+    Segment:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+        subsectionCount:
+          type: integer
+        lessonCount:
+          type: integer
+      required:
+        - id
+        - title
+        - sortOrder
+        - subsectionCount
+        - lessonCount
+
+    CreateSegmentRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+      required:
+        - title
+
+    UpdateSegmentRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+
+    Subsection:
+      type: object
+      properties:
+        id:
+          type: integer
+        segmentId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+        lessonCount:
+          type: integer
+      required:
+        - id
+        - segmentId
+        - title
+        - sortOrder
+        - lessonCount
+
+    CreateSubsectionRequest:
+      type: object
+      properties:
+        segmentId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+      required:
+        - segmentId
+        - title
+
+    UpdateSubsectionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: integer
+        subsectionId:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+          enum: [loom, pdf, link, text]
+        content:
+          type: string
+          nullable: true
+        uploadId:
+          type: integer
+          nullable: true
+        uploadUrl:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+        isCompleted:
+          type: boolean
+      required:
+        - id
+        - subsectionId
+        - title
+        - type
+        - sortOrder
+        - isCompleted
+
+    CreateLessonRequest:
+      type: object
+      properties:
+        subsectionId:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+          enum: [loom, pdf, link, text]
+        content:
+          type: string
+          nullable: true
+        uploadId:
+          type: integer
+          nullable: true
+      required:
+        - subsectionId
+        - title
+        - type
+
+    UpdateLessonRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+          enum: [loom, pdf, link, text]
+        content:
+          type: string
+          nullable: true
+        uploadId:
+          type: integer
+          nullable: true
+
+    LessonCompletion:
+      type: object
+      properties:
+        lessonId:
+          type: integer
+        completed:
+          type: boolean
+      required:
+        - lessonId
+        - completed
+
+    ToggleCompletionRequest:
+      type: object
+      properties:
+        completed:
+          type: boolean
+      required:
+        - completed
+
+    ProgressRollup:
+      type: object
+      properties:
+        totalLessons:
+          type: integer
+        completedLessons:
+          type: integer
+        overallPercent:
+          type: number
+        bySegment:
+          type: array
+          items:
+            $ref: "#/components/schemas/SegmentProgress"
+      required:
+        - totalLessons
+        - completedLessons
+        - overallPercent
+        - bySegment
+
+    SegmentProgress:
+      type: object
+      properties:
+        segmentId:
+          type: integer
+        segmentTitle:
+          type: string
+        totalLessons:
+          type: integer
+        completedLessons:
+          type: integer
+        percent:
+          type: number
+      required:
+        - segmentId
+        - segmentTitle
+        - totalLessons
+        - completedLessons
+        - percent
+
+    AdminProgressRow:
+      type: object
+      properties:
+        userId:
+          type: integer
+        userName:
+          type: string
+        userEmail:
+          type: string
+        totalLessons:
+          type: integer
+        completedLessons:
+          type: integer
+        overallPercent:
+          type: number
+        bySegment:
+          type: array
+          items:
+            $ref: "#/components/schemas/SegmentProgress"
+      required:
+        - userId
+        - userName
+        - userEmail
+        - totalLessons
+        - completedLessons
+        - overallPercent
+        - bySegment
+
+    UploadResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+        filename:
+          type: string
+        originalName:
+          type: string
+        size:
+          type: integer
+      required:
+        - id
+        - url
+        - filename
+        - originalName
+        - size
