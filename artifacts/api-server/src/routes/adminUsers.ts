@@ -16,10 +16,6 @@ router.get("/admin/users", async (_req, res) => {
 
 router.post("/admin/users", validateBody(CreateUserBody), async (req, res) => {
   const { email, name, role } = req.body;
-  if (!["admin", "member"].includes(role)) {
-    apiError(res, 400, "role must be admin or member");
-    return;
-  }
   const { user, tempPassword } = await createUserWithTempPassword(email, name, role);
   const { passwordHash: _h, ...safeUser } = user;
   res.status(201).json({ user: safeUser, tempPassword });

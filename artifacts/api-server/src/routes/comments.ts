@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { listCommentsByPost, createComment, deleteComment, getComment } from "../storage/comments.js";
 import { requireAuth } from "../middlewares/auth.js";
+import { validateBody } from "../validate.js";
+import { CreateCommentBody } from "@workspace/api-zod";
 
 const router = Router();
 
@@ -14,13 +16,9 @@ router.get("/posts/:postId/comments", requireAuth, async (req, res) => {
   res.json(comments);
 });
 
-router.post("/posts/:postId/comments", requireAuth, async (req, res) => {
+router.post("/posts/:postId/comments", requireAuth, validateBody(CreateCommentBody), async (req, res) => {
   const postId = Number(req.params.postId);
-  const { body } = req.body ?? {};
-  if (!body) {
-    res.status(400).json({ error: "body required" });
-    return;
-  }
+  const { body } = req.body;
   const comment = await createComment(postId, req.user!.id, body);
   res.status(201).json(comment);
 });

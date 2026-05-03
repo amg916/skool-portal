@@ -2,6 +2,8 @@ import { Router } from "express";
 import { listPostsByChannel, createPost, deletePost, pinPost, unpinPost, getPost } from "../storage/posts.js";
 import { listChannels } from "../storage/channels.js";
 import { requireAuth, requireAdmin } from "../middlewares/auth.js";
+import { validateBody } from "../validate.js";
+import { CreatePostBody } from "@workspace/api-zod";
 
 const router = Router();
 
@@ -15,15 +17,10 @@ router.get("/channels/:channelId/posts", requireAuth, async (req, res) => {
   res.json(posts);
 });
 
-router.post("/channels/:channelId/posts", requireAuth, async (req, res) => {
+router.post("/channels/:channelId/posts", requireAuth, validateBody(CreatePostBody), async (req, res) => {
   const channelId = Number(req.params.channelId);
-  const { body } = req.body ?? {};
-  if (!body) {
-    res.status(400).json({ error: "body required" });
-    return;
-  }
+  const { body } = req.body;
 
-  // Check adminsOnly
   const channels = await listChannels();
   const channel = channels.find((c) => c.id === channelId);
   if (channel?.adminsOnly && req.user!.role !== "admin") {
