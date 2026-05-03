@@ -11,6 +11,8 @@ import { errorHandler } from "./errors.js";
 
 const app: Express = express();
 
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,
