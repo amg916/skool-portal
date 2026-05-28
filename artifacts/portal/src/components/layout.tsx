@@ -6,7 +6,6 @@ import {
   MessageCircle,
   Bell,
   LogOut,
-  ChevronsUpDown,
   ShieldAlert,
   Upload,
 } from "lucide-react";
@@ -126,7 +125,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </div>
             )}
             <span className="font-semibold text-foreground truncate">{groupName}</span>
-            <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
           </Link>
 
           <div className="flex-1 max-w-2xl mx-auto hidden md:block">

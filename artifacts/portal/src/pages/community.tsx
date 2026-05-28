@@ -23,7 +23,6 @@ import {
   Send,
   Loader2,
   ThumbsUp,
-  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -351,14 +350,6 @@ export default function CommunityPage() {
                 );
               })}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Filter posts"
-              className="text-muted-foreground hover:text-foreground shrink-0"
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
           </div>
 
           {activeChannel?.adminsOnly && user?.role !== "admin" && <AdminOnlyNotice />}
