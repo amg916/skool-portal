@@ -41,37 +41,8 @@ router.post("/auth/logout", requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
-router.get("/auth/me", async (req, res) => {
-  // Try existing session first
-  const token = req.cookies?.session_token;
-  if (token) {
-    const { getSessionByToken } = await import("../storage/sessions.js");
-    const { getUserById } = await import("../storage/users.js");
-    const session = await getSessionByToken(token);
-    if (session) {
-      const user = await getUserById(session.userId);
-      if (user && user.isActive) {
-        const { passwordHash: _h, ...safeUser } = user;
-        res.json(safeUser);
-        return;
-      }
-    }
-  }
-  // Auto-login as the first admin user
-  const { getUserByEmail } = await import("../storage/users.js");
-  const admin = await getUserByEmail("admin@example.com");
-  if (!admin || !admin.isActive) {
-    res.status(401).json({ error: "No admin user found" });
-    return;
-  }
-  const newToken = await createSession(admin.id);
-  res.cookie("session_token", newToken, {
-    httpOnly: true,
-    sameSite: "none",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-    secure: true,
-  });
-  const { passwordHash: _h, ...safeUser } = admin;
+router.get("/auth/me", requireAuth, async (req, res) => {
+  const { passwordHash: _h, ...safeUser } = req.user!;
   res.json(safeUser);
 });
 

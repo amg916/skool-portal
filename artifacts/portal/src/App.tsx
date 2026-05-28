@@ -2,11 +2,13 @@ import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 
+import { AuthGuard } from "@/components/auth-guard";
 import { AppLayout } from "@/components/layout";
 
+import LoginPage from "@/pages/login";
+import ForceChangePasswordPage from "@/pages/force-change-password";
 import CommunityPage from "@/pages/community";
 import SchoolPage from "@/pages/school";
 import SchoolSubsectionPage from "@/pages/school-subsection";
@@ -24,81 +26,117 @@ const queryClient = new QueryClient();
 
 function RedirectToCommunity() {
   const [, setLocation] = useLocation();
-  useEffect(() => {
-    setLocation("/community");
-  }, []);
+  // Using useEffect to avoid render phase updates
+  import("react").then(({ useEffect }) => {
+    useEffect(() => {
+      setLocation("/community");
+    }, []);
+  });
   return null;
 }
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={RedirectToCommunity} />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/force-change-password">
+        <AuthGuard>
+          <ForceChangePasswordPage />
+        </AuthGuard>
+      </Route>
+      
+      <Route path="/">
+        <AuthGuard>
+          <RedirectToCommunity />
+        </AuthGuard>
+      </Route>
 
       <Route path="/community/:channelId?">
-        <AppLayout>
-          <CommunityPage />
-        </AppLayout>
+        <AuthGuard>
+          <AppLayout>
+            <CommunityPage />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route path="/school">
-        <AppLayout>
-          <SchoolPage />
-        </AppLayout>
+        <AuthGuard>
+          <AppLayout>
+            <SchoolPage />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route path="/school/subsections/:id">
-        <AppLayout>
-          <SchoolSubsectionPage />
-        </AppLayout>
+        <AuthGuard>
+          <AppLayout>
+            <SchoolSubsectionPage />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route path="/school/lessons/:id">
-        <AppLayout>
-          <SchoolLessonPage />
-        </AppLayout>
+        <AuthGuard>
+          <AppLayout>
+            <SchoolLessonPage />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route path="/admin">
-        <AppLayout>
-          <AdminDashboard />
-        </AppLayout>
+        <AuthGuard requireAdmin>
+          <AppLayout>
+            <AdminDashboard />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route path="/admin/users">
-        <AppLayout>
-          <AdminUsers />
-        </AppLayout>
+        <AuthGuard requireAdmin>
+          <AppLayout>
+            <AdminUsers />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route path="/admin/channels">
-        <AppLayout>
-          <AdminChannels />
-        </AppLayout>
+        <AuthGuard requireAdmin>
+          <AppLayout>
+            <AdminChannels />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route path="/admin/school/segments">
-        <AppLayout>
-          <AdminSegments />
-        </AppLayout>
+        <AuthGuard requireAdmin>
+          <AppLayout>
+            <AdminSegments />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route path="/admin/school/subsections">
-        <AppLayout>
-          <AdminSubsections />
-        </AppLayout>
+        <AuthGuard requireAdmin>
+          <AppLayout>
+            <AdminSubsections />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route path="/admin/school/lessons">
-        <AppLayout>
-          <AdminLessons />
-        </AppLayout>
+        <AuthGuard requireAdmin>
+          <AppLayout>
+            <AdminLessons />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route path="/admin/progress">
-        <AppLayout>
-          <AdminProgress />
-        </AppLayout>
+        <AuthGuard requireAdmin>
+          <AppLayout>
+            <AdminProgress />
+          </AppLayout>
+        </AuthGuard>
       </Route>
 
       <Route>
