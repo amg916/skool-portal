@@ -234,9 +234,13 @@ export default function CommunityPage() {
 
   useEffect(() => {
     if (channels && channels.length > 0 && !channelId) {
-      setLocation(`/community/${channels[0]!.id}`);
+      const isAdmin = user?.role === "admin";
+      const landing =
+        channels.find((c) => !c.adminsOnly) ??
+        (isAdmin ? channels[0] : channels.find((c) => !c.adminsOnly) ?? channels[0]);
+      if (landing) setLocation(`/community/${landing.id}`);
     }
-  }, [channels, channelId, setLocation]);
+  }, [channels, channelId, setLocation, user?.role]);
 
   const handleCreatePost = async () => {
     if (!newPostContent.trim() || !activeChannelId) return;
@@ -380,16 +384,23 @@ export default function CommunityPage() {
 
           <div className="flex items-center justify-between gap-2 overflow-x-auto py-1">
             <div className="flex items-center gap-2">
-              <Link
-                href={channels && channels[0] ? `/community/${channels[0].id}` : "/community"}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  !channelId || (channels && channelId === String(channels[0]?.id))
-                    ? "bg-foreground text-background"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                All
-              </Link>
+              {(() => {
+                const defaultChannel =
+                  channels?.find((c) => !c.adminsOnly) ?? channels?.[0];
+                const isDefault = !!defaultChannel && activeChannelId === defaultChannel.id;
+                return (
+                  <Link
+                    href={defaultChannel ? `/community/${defaultChannel.id}` : "/community"}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                      isDefault
+                        ? "bg-foreground text-background"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    All
+                  </Link>
+                );
+              })()}
               {channels?.map((c) => {
                 const active = activeChannelId === c.id;
                 return (
