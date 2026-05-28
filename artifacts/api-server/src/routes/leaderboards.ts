@@ -28,10 +28,15 @@ router.get("/leaderboards", requireAuth, async (req, res) => {
     ? sql`select author_id, count(*)::int as c from ${commentsTable} where created_at >= ${since.toISOString()} group by author_id`
     : sql`select author_id, count(*)::int as c from ${commentsTable} group by author_id`;
 
-  const rows = await db.execute<{ user_id: number; name: string; points: number }>(sql`
+  const rows = await db.execute<{
+    user_id: number;
+    name: string;
+    avatar_url: string | null;
+    points: number;
+  }>(sql`
     with p as (${postClause}),
          c as (${commentClause})
-    select u.id as user_id, u.name as name,
+    select u.id as user_id, u.name as name, u.avatar_url as avatar_url,
            coalesce((select c from p where author_id = u.id), 0) * 3 +
            coalesce((select c from c where author_id = u.id), 0) * 1 as points
     from ${usersTable} u
@@ -40,9 +45,15 @@ router.get("/leaderboards", requireAuth, async (req, res) => {
     limit 50
   `);
 
-  const entries = (rows.rows ?? rows ?? []).map((row: { user_id: number; name: string; points: number | string }) => ({
+  const entries = (rows.rows ?? rows ?? []).map((row: {
+    user_id: number;
+    name: string;
+    avatar_url: string | null;
+    points: number | string;
+  }) => ({
     userId: Number(row.user_id),
     name: row.name,
+    avatarUrl: row.avatar_url,
     points: Number(row.points || 0),
   }));
 

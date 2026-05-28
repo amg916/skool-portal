@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useGetMe } from "@workspace/api-client-react";
 import { Lock, HelpCircle, Loader2 } from "lucide-react";
+import { UserAvatar } from "@/components/user-avatar";
 
 type Period = "7d" | "30d" | "all";
 
 type LeaderboardEntry = {
   userId: number;
   name: string;
+  avatarUrl: string | null;
   points: number;
 };
 
@@ -53,11 +54,12 @@ export default function LeaderboardsPage() {
         <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 items-center">
           <div className="flex flex-col items-center">
             <div className="relative">
-              <Avatar className="h-32 w-32">
-                <AvatarFallback className="bg-muted text-foreground text-3xl font-semibold">
-                  {me?.name.charAt(0).toUpperCase() ?? "?"}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                name={me?.name ?? "?"}
+                avatarUrl={(me as { avatarUrl?: string | null } | undefined)?.avatarUrl ?? null}
+                className="h-32 w-32"
+                fallbackClassName="text-3xl"
+              />
               <span className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full bg-foreground text-background flex items-center justify-center text-sm font-bold border-4 border-card">
                 {myLevel}
               </span>
@@ -148,11 +150,12 @@ function LeaderboardColumn({
               >
                 {idx + 1}
               </span>
-              <Avatar className="h-7 w-7">
-                <AvatarFallback className="text-[11px] bg-muted">
-                  {e.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                name={e.name}
+                avatarUrl={e.avatarUrl}
+                className="h-7 w-7"
+                fallbackClassName="text-[11px]"
+              />
               <span className="flex-1 truncate text-sm text-foreground">{e.name}</span>
               <span className="text-xs font-semibold text-muted-foreground">
                 {showTotal ? e.points : `+${e.points}`}

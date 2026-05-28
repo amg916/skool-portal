@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "wouter";
 import { Trophy } from "lucide-react";
+import { UserAvatar } from "@/components/user-avatar";
 
 type LeaderboardEntry = {
   userId: number;
   name: string;
+  avatarUrl: string | null;
   points: number;
 };
 
@@ -59,11 +60,12 @@ export function LeaderboardWidget() {
               >
                 {idx + 1}
               </span>
-              <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-[10px] bg-muted">
-                  {entry.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                name={entry.name}
+                avatarUrl={entry.avatarUrl}
+                className="h-6 w-6"
+                fallbackClassName="text-[10px]"
+              />
               <span className="flex-1 truncate text-sm text-foreground">{entry.name}</span>
               <span className="text-xs text-muted-foreground font-medium">+{entry.points}</span>
             </li>

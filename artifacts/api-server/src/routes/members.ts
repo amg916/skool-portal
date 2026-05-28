@@ -15,6 +15,8 @@ router.get("/members", requireAuth, async (_req, res) => {
       role: u.role,
       handle: u.email.split("@")[0],
       joinedAt: u.createdAt,
+      avatarUrl: u.avatarUrl,
+      bio: u.bio,
     }));
   res.json(members);
 });
