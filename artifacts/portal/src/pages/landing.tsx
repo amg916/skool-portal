@@ -1,20 +1,8 @@
-import { Link, useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useGetMe } from "@workspace/api-client-react";
-import { Button } from "@/components/ui/button";
-import {
-  PlayCircle,
-  Clock,
-  Wand2,
-  Hammer,
-  Users,
-  ShieldCheck,
-  Flame,
-  ArrowRight,
-  CheckCircle2,
-} from "lucide-react";
-import { useGroup } from "@/lib/group";
+import "./landing.css";
 
 type ProvidersResponse = { providers: Array<"google" | "facebook" | "github"> };
 
@@ -24,284 +12,563 @@ async function fetchProviders(): Promise<ProvidersResponse> {
   return r.json();
 }
 
-const FEATURES = [
-  {
-    icon: Clock,
-    title: "Under 10 minutes",
-    body: "Every video hits the point fast. No 90-minute lectures. No filler. Watch one over coffee, try it the same morning.",
-  },
-  {
-    icon: Hammer,
-    title: "Actually try it",
-    body: "Each banger ends with a quick build idea you can try today. The community shows their work back in public.",
-  },
-  {
-    icon: Wand2,
-    title: "The best of new AI",
-    body: "Hand-picked drops, model releases, agent breakdowns, prompt patterns that work in real workflows right now.",
-  },
-  {
-    icon: Users,
-    title: "Builders, not lurkers",
-    body: "Members are people actually making things with AI. Founders, engineers, designers, hobbyists. Trade techniques, not opinions.",
-  },
-];
+const FONT_LINK_ID = "baingers-landing-fonts";
 
-const BANGERS = [
-  {
-    title: "Spin up a one-shot Claude agent that books your meetings — 8 min",
-    pill: "Agents",
-  },
-  {
-    title: "The 3-prompt pattern that fixed our RAG recall — 6 min",
-    pill: "RAG",
-  },
-  {
-    title: "Cursor → live site in 9 minutes: a working SaaS landing today",
-    pill: "Tools",
-  },
-  {
-    title: "Cheap voice agent with Twilio + Deepgram + Sonnet (under 10 min)",
-    pill: "Voice",
-  },
-];
-
-const HOW = [
-  "Watch the banger — average 7 minutes.",
-  "Try the build idea — usually same day.",
-  "Post what you made — the community gives feedback.",
-];
+function ensureFonts() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(FONT_LINK_ID)) return;
+  const link = document.createElement("link");
+  link.id = FONT_LINK_ID;
+  link.rel = "stylesheet";
+  link.href =
+    "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap";
+  document.head.appendChild(link);
+}
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
   const { data: user, isLoading } = useGetMe({ query: { retry: false } });
-  const { data: group } = useGroup();
   const { data: providers } = useQuery({
     queryKey: ["oauth:providers"],
     queryFn: fetchProviders,
   });
+  const rootRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!isLoading && user) setLocation("/community");
   }, [user, isLoading, setLocation]);
 
+  useEffect(() => {
+    ensureFonts();
+  }, []);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    const nav = navRef.current;
+    if (!root || !nav) return;
+
+    const onScroll = () => {
+      if (window.scrollY > 12) nav.classList.add("scrolled");
+      else nav.classList.remove("scrolled");
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.14, rootMargin: "0px 0px -8% 0px" },
+    );
+    root.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      io.disconnect();
+    };
+  }, []);
+
   const googleEnabled = providers?.providers.includes("google") ?? false;
-  const groupName = group?.name ?? "Baingers";
-  const groupIcon = group?.iconUrl ?? null;
-  const signupHref = googleEnabled ? "/api/auth/google/start?returnTo=/community" : "/login";
+  const signupHref = googleEnabled
+    ? "/api/auth/google/start?returnTo=/community"
+    : "/login";
+
+  const onJoin = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.location.href = signupHref;
+  };
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground">
-      <header className="border-b border-border sticky top-0 bg-background/90 backdrop-blur z-40">
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            {groupIcon ? (
-              <img src={groupIcon} alt={groupName} className="h-9 w-9 rounded-lg" />
-            ) : (
-              <div className="h-9 w-9 rounded-lg bg-foreground text-background flex items-center justify-center font-extrabold">
-                B
+    <div ref={rootRef} className="baingers-landing js">
+      <span id="top" />
+
+      <div className="announce">
+        <span className="tag">EARLY ACCESS</span>
+        Now in early access — invite-only via Google sign-in ·{" "}
+        <a href={signupHref} onClick={onJoin}>
+          Join with Google&nbsp;→
+        </a>
+      </div>
+
+      <nav ref={navRef} className="nav" id="nav">
+        <div className="nav-inner">
+          <a className="brand" href="#top" aria-label="Baingers home">
+            <span className="brand-mark" />
+            <span className="brand-name">
+              B<span className="ai">ai</span>ngers
+            </span>
+          </a>
+          <div className="nav-links">
+            <a href="#about-banger">What's a banger</a>
+            <a href="#how">How it works</a>
+            <a href="#inside">What's inside</a>
+            <a href="#faq">FAQ</a>
+          </div>
+          <div className="nav-right">
+            <button className="nav-signin" onClick={onJoin}>
+              Log in
+            </button>
+            <button className="btn btn-primary" onClick={onJoin}>
+              <span className="g-glyph" />
+              Join with Google
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <header className="hero">
+        <div className="wrap hero-grid">
+          <div className="hero-copy">
+            <span className="hero-pill reveal-up">
+              <span className="dot" />
+              Members-only AI community
+              <span className="chip">EARLY ACCESS</span>
+            </span>
+            <h1 className="hero-title reveal-up">
+              AI bangers,
+              <br />
+              <span className="grad">under 10 minutes.</span>
+            </h1>
+            <p className="hero-sub reveal-up">
+              A members-only community for the people actually making things with AI.
+            </p>
+            <div className="hero-flow reveal-up">
+              <span className="step-chip">Short video</span>
+              <span className="arrow">→</span>
+              <span className="step-chip">Try it the same day</span>
+              <span className="arrow">→</span>
+              <span className="step-chip">Post what you made</span>
+            </div>
+            <div className="hero-cta reveal-up">
+              <button className="btn btn-primary btn-lg" onClick={onJoin}>
+                <span className="g-glyph" />
+                Join with Google
+              </button>
+              <a className="btn btn-ghost btn-lg" href="#inside">
+                See what's inside
+              </a>
+            </div>
+          </div>
+
+          <div className="hero-visual reveal-up">
+            <div className="mockup">
+              <div className="mockup-bar">
+                <i /> <i /> <i />
+                <span className="mockup-url">baingers.com/feed</span>
               </div>
-            )}
-            <span className="font-bold text-lg">{groupName}</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost">
-              <Link href="/login">Log in</Link>
-            </Button>
-            <Button asChild className="bg-foreground text-background hover:bg-foreground/90">
-              <a href={signupHref}>Join with Google <ArrowRight className="h-4 w-4 ml-1" /></a>
-            </Button>
+              <div className="sample-thumb">
+                <span className="sample-label">Sample banger</span>
+                <div className="clip-play">
+                  <span />
+                </div>
+                <div className="mockup-runtime">8 min</div>
+              </div>
+              <div className="mockup-meta">
+                <span
+                  className="mk-avatar"
+                  style={{ background: "var(--grad-brand)" }}
+                >
+                  B
+                </span>
+                <div>
+                  <div className="mk-title">
+                    A short, follow-along AI walkthrough
+                  </div>
+                  <div className="mk-by">Under 10 min · watch it, then try it</div>
+                </div>
+              </div>
+            </div>
+            <div className="badge-made">I made this ✓</div>
+            <div className="float-react">🔥 ❤️ 👏</div>
           </div>
         </div>
       </header>
 
-      <section className="relative overflow-hidden border-b border-border">
-        <div
-          className="absolute inset-0 opacity-[0.07] pointer-events-none"
-          aria-hidden="true"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 20% 20%, #3B82F6 0px, transparent 40%), radial-gradient(circle at 80% 0%, #EC4899 0px, transparent 40%), radial-gradient(circle at 50% 100%, #F59E0B 0px, transparent 40%)",
-          }}
-        />
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 pt-20 pb-24 sm:pt-28 sm:pb-32 relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-foreground/5 px-3 py-1 text-xs font-medium text-foreground/70 mb-6">
-              <Flame className="h-3.5 w-3.5 text-accent" />
-              The only AI community where the videos are short
-            </div>
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05]">
-              AI bangers.{" "}
-              <span className="bg-gradient-to-r from-blue-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
-                Under 10 min.
-              </span>{" "}
-              Ship today.
-            </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground mt-7 max-w-2xl mx-auto leading-relaxed">
-              Every video on Baingers is a tight, actionable AI build. Watch one
-              over coffee. Ship something before lunch. Join the builders trying
-              the heat — not just talking about it.
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button
-                asChild
-                size="lg"
-                className="bg-foreground text-background hover:bg-foreground/90 px-8 text-base"
-              >
-                <a href={signupHref}>
-                  Join with Google
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </a>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="px-8 text-base">
-                <Link href="/login">I have an account</Link>
-              </Button>
-            </div>
-            <div className="mt-5 text-xs text-muted-foreground flex items-center justify-center gap-2">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Members-only. Google sign-in. We never store a password.
-            </div>
-          </div>
-
-          <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto">
-            {BANGERS.map((b) => (
-              <div
-                key={b.title}
-                className="bg-card border border-border rounded-xl p-4 hover:border-foreground/30 transition-colors group cursor-default"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <PlayCircle className="h-5 w-5 text-accent" />
-                  <span className="text-[10px] uppercase tracking-wider bg-muted text-muted-foreground px-2 py-0.5 rounded">
-                    {b.pill}
-                  </span>
-                </div>
-                <div className="text-sm font-medium leading-snug text-foreground line-clamp-3">
-                  {b.title}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-border">
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-20">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              No 90-minute lectures. No hot-take threads.
-            </h2>
-            <p className="text-muted-foreground mt-4 text-lg">
-              Just sharp clips you can act on the same day you watch them.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {FEATURES.map((f) => (
-              <div
-                key={f.title}
-                className="bg-card border border-border rounded-2xl p-7 hover:border-foreground/20 transition-colors"
-              >
-                <div className="h-11 w-11 rounded-xl bg-foreground text-background flex items-center justify-center mb-5">
-                  <f.icon className="h-5 w-5" />
-                </div>
-                <h3 className="font-bold text-xl text-foreground mb-2">{f.title}</h3>
-                <p className="text-foreground/70 leading-relaxed">{f.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-border bg-muted/20">
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <section className="section soft" id="about-banger">
+        <div className="wrap">
+          <div className="wb-grid">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                The Baingers loop
-              </h2>
-              <p className="text-muted-foreground mt-4 text-lg">
-                Why members try more in a week here than they did all last
-                quarter.
+              <hr className="grad-divider reveal" style={{ marginLeft: 0 }} />
+              <div className="eyebrow reveal">What's a banger?</div>
+              <p className="wb-def reveal d1">
+                A banger is a <span className="grad">short AI walkthrough</span> —
+                under 10 minutes — you can follow start-to-finish in one sitting.
               </p>
-              <ul className="mt-8 space-y-4">
-                {HOW.map((step, i) => (
-                  <li key={step} className="flex gap-4">
-                    <div className="h-8 w-8 rounded-full bg-foreground text-background flex items-center justify-center font-bold shrink-0">
-                      {i + 1}
-                    </div>
-                    <div className="pt-1 text-foreground text-lg leading-snug">{step}</div>
-                  </li>
-                ))}
-              </ul>
+              <p className="wb-note reveal d2">
+                No fluff intros. No 90-minute lectures. Press play, follow along,
+                and you've made something real by the end.
+              </p>
             </div>
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
-                What members made last week
+            <div className="reveal d1">
+              <div className="wb-card">
+                <div className="sample-thumb">
+                  <span className="sample-label">Sample banger</span>
+                  <div className="clip-play">
+                    <span />
+                  </div>
+                  <div className="banger-runtime">8 min</div>
+                </div>
+                <div className="banger-body">
+                  <h3 className="banger-title">
+                    Watch a short walkthrough, then make the same thing yourself
+                  </h3>
+                  <div className="wb-react">
+                    <span className="pill">🔥 ❤️ 👏</span>
+                    <span className="pill made">I made this ✓</span>
+                  </div>
+                </div>
               </div>
-              <ul className="space-y-3 text-sm">
-                {[
-                  "An invoice-OCR pipeline that paid for itself by Friday",
-                  "Auto-generated SOC2 evidence with a 4-prompt agent",
-                  "A Slack bot that triages bug reports from screenshots",
-                  "A Cursor MCP server that pulls live prod logs",
-                  "Daily AI-news brief delivered to 1,200 of their subscribers",
-                ].map((line) => (
-                  <li key={line} className="flex gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                    <span className="text-foreground/85">{line}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <section>
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-24 text-center">
-          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
-            Stop saving "for later".
-            <br />
-            <span className="bg-gradient-to-r from-blue-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
-              Watch one. Build one. Today.
-            </span>
-          </h2>
-          <p className="text-muted-foreground mt-5 max-w-xl mx-auto">
-            Members-only. Free to join. Google sign-in keeps the bots out.
-          </p>
-          <Button
-            asChild
-            size="lg"
-            className="mt-9 bg-foreground text-background hover:bg-foreground/90 px-10 text-base"
-          >
-            <a href={signupHref}>
-              Join with Google
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </a>
-          </Button>
+      <section className="section" id="how">
+        <div className="wrap">
+          <div className="section-head">
+            <hr className="grad-divider reveal" />
+            <div className="eyebrow reveal">How it works</div>
+            <h2 className="section-title reveal d1">
+              Watch. Try. Post what you made.
+            </h2>
+            <p className="section-note reveal d2">
+              Three steps, one sitting. That's the whole loop.
+            </p>
+          </div>
+          <div className="hiw-grid">
+            <div className="hiw-card reveal">
+              <div className="hiw-ico">
+                <svg viewBox="0 0 24 24">
+                  <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+                  <circle cx="12" cy="12" r="3.2" />
+                </svg>
+              </div>
+              <div className="hiw-step">Step 1</div>
+              <h3 className="hiw-title">Watch</h3>
+              <p className="hiw-desc">
+                Pick a banger from the feed or the classroom. Every video runs
+                under 10 minutes.
+              </p>
+              <span className="hiw-arrow">→</span>
+            </div>
+            <div className="hiw-card reveal d1">
+              <div className="hiw-ico">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9.2" />
+                  <path d="M10 8.4l6 3.6-6 3.6Z" fill="#fff" stroke="none" />
+                </svg>
+              </div>
+              <div className="hiw-step">Step 2</div>
+              <h3 className="hiw-title">Try it</h3>
+              <p className="hiw-desc">
+                Follow along on your own machine. Most bangers are walkthroughs
+                you can replicate the same day.
+              </p>
+              <span className="hiw-arrow">→</span>
+            </div>
+            <div className="hiw-card reveal d2">
+              <div className="hiw-ico">
+                <svg viewBox="0 0 24 24">
+                  <path d="M3 8.5a2 2 0 0 1 2-2h2l1.4-2h7.2L19 6.5a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+                  <circle cx="12" cy="13" r="3.6" />
+                </svg>
+              </div>
+              <div className="hiw-step">Step 3</div>
+              <h3 className="hiw-title">Post what you made</h3>
+              <p className="hiw-desc">
+                Comment on the banger and mark it "I made this." Your comment
+                gets a green badge and counts double on the leaderboard.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <footer className="border-t border-border">
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            {groupIcon ? (
-              <img src={groupIcon} alt={groupName} className="h-6 w-6 rounded" />
-            ) : (
-              <div className="h-6 w-6 rounded bg-foreground text-background flex items-center justify-center font-bold text-[10px]">
-                B
-              </div>
-            )}
-            <span>
-              {groupName} · {group?.slug ?? "baingers.com"}
-            </span>
+      <section className="section soft" id="inside">
+        <div className="wrap">
+          <div className="section-head">
+            <hr className="grad-divider reveal" />
+            <div className="eyebrow reveal">What's inside</div>
+            <h2 className="section-title reveal d1">
+              Everything the community runs on
+            </h2>
+            <p className="section-note reveal d2">
+              Real features, live in the app today.
+            </p>
           </div>
-          <div className="flex gap-4">
-            <Link href="/about" className="hover:text-foreground">
-              About
-            </Link>
-            <Link href="/login" className="hover:text-foreground">
-              Log in
-            </Link>
+          <div className="feat-grid">
+            <div className="feat-card reveal">
+              <div className="feat-ico ico-blue">
+                <svg viewBox="0 0 24 24">
+                  <rect x="3" y="4" width="18" height="5" rx="1.5" />
+                  <rect x="3" y="12" width="18" height="5" rx="1.5" />
+                  <path d="M3 20h11" />
+                </svg>
+              </div>
+              <h3 className="feat-title">Community feed</h3>
+              <p className="feat-desc">
+                Post Loom, YouTube, or Vimeo videos with tags, emoji reactions,
+                and bookmarks.
+              </p>
+            </div>
+            <div className="feat-card reveal d1">
+              <div className="feat-ico ico-purple">
+                <svg viewBox="0 0 24 24">
+                  <path d="M3 8l9-4 9 4-9 4-9-4Z" />
+                  <path d="M7 10.5V15c0 1.4 2.7 2.8 5 2.8s5-1.4 5-2.8v-4.5" />
+                  <path d="M21 8v5" />
+                </svg>
+              </div>
+              <h3 className="feat-title">Classroom</h3>
+              <p className="feat-desc">
+                Structured video lessons grouped into segments and subsections
+                you can work through.
+              </p>
+            </div>
+            <div className="feat-card reveal d2">
+              <div className="feat-ico ico-orange">
+                <svg viewBox="0 0 24 24">
+                  <path d="M9 18h6" />
+                  <path d="M10 21h4" />
+                  <path d="M12 3a6 6 0 0 0-3.8 10.6c.7.6 1.3 1.4 1.3 2.4h5c0-1 .6-1.8 1.3-2.4A6 6 0 0 0 12 3Z" />
+                </svg>
+              </div>
+              <h3 className="feat-title">Suggestion board</h3>
+              <p className="feat-desc">
+                Members vote on what should get built or featured next. The
+                community sets the agenda.
+              </p>
+            </div>
+            <div className="feat-card reveal d3">
+              <div className="feat-ico ico-green">
+                <svg viewBox="0 0 24 24">
+                  <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" />
+                  <path d="M7 6H4.5a1.5 1.5 0 0 0 0 5H8" />
+                  <path d="M17 6h2.5a1.5 1.5 0 0 1 0 5H16" />
+                  <path d="M9.5 20h5" />
+                  <path d="M12 12v5" />
+                </svg>
+              </div>
+              <h3 className="feat-title">Leaderboards</h3>
+              <p className="feat-desc">
+                7-day, 30-day, all-time. Earn points for posts, comments, and "I
+                made this" replies.
+              </p>
+            </div>
+            <div className="feat-card reveal">
+              <div className="feat-ico ico-blue">
+                <svg viewBox="0 0 24 24">
+                  <path d="M6 4h12v16l-6-4-6 4Z" />
+                </svg>
+              </div>
+              <h3 className="feat-title">Bookmarks</h3>
+              <p className="feat-desc">
+                Pin any post to your Saved page and come back to it whenever
+                you're ready.
+              </p>
+            </div>
+            <div className="feat-card reveal d1">
+              <div className="feat-ico ico-purple">
+                <svg viewBox="0 0 24 24">
+                  <path d="M21 11.5a8 8 0 0 1-11.5 7.2L4 20l1.3-4.5A8 8 0 1 1 21 11.5Z" />
+                </svg>
+              </div>
+              <h3 className="feat-title">Direct messaging</h3>
+              <p className="feat-desc">
+                Message any member 1-on-1 to ask how they made something or trade
+                techniques.
+              </p>
+            </div>
+            <div className="feat-card reveal d2">
+              <div className="feat-ico ico-orange">
+                <svg viewBox="0 0 24 24">
+                  <rect x="3" y="5" width="18" height="16" rx="2" />
+                  <path d="M3 10h18M8 3v4M16 3v4" />
+                </svg>
+              </div>
+              <h3 className="feat-title">Calendar</h3>
+              <p className="feat-desc">
+                A weekly Q&amp;A call plus community events, all on a shared
+                schedule.
+              </p>
+            </div>
+            <div className="feat-card reveal d3">
+              <div className="feat-ico ico-green">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+                </svg>
+              </div>
+              <h3 className="feat-title">Member profiles</h3>
+              <p className="feat-desc">
+                Profiles with avatars so you can see who's who and what they've
+                made.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="wrap">
+          <div className="claims">
+            <div className="claim reveal">
+              <div className="claim-ico">
+                <svg viewBox="0 0 24 24">
+                  <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />
+                </svg>
+              </div>
+              <div>
+                <p className="claim-text">
+                  Your feed updates as members post —{" "}
+                  <b>real-time, ad-free, no algorithm.</b>
+                </p>
+                <span className="claim-live">
+                  <span className="dot" />
+                  Live feed
+                </span>
+              </div>
+            </div>
+            <div className="claim reveal d1">
+              <div className="claim-ico">
+                <svg viewBox="0 0 24 24">
+                  <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" />
+                  <path d="M7 6H4.5a1.5 1.5 0 0 0 0 5H8" />
+                  <path d="M17 6h2.5a1.5 1.5 0 0 1 0 5H16" />
+                  <path d="M9.5 20h5" />
+                  <path d="M12 12v5" />
+                </svg>
+              </div>
+              <div>
+                <p className="claim-text">
+                  Built for makers, not lurkers —{" "}
+                  <b>the leaderboard rewards people who actually try the bangers.</b>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section soft" id="faq">
+        <div className="wrap">
+          <div className="section-head">
+            <hr className="grad-divider reveal" />
+            <div className="eyebrow reveal">FAQ</div>
+            <h2 className="section-title reveal d1">
+              Questions, answered straight
+            </h2>
+          </div>
+          <div className="faq">
+            <details className="faq-item reveal" open>
+              <summary>What's a banger?</summary>
+              <div className="faq-a">
+                A banger is a short — under 10 minutes — AI walkthrough you can
+                follow start-to-finish in one sitting. No fluff intros, no
+                90-minute lectures.
+              </div>
+            </details>
+            <details className="faq-item reveal">
+              <summary>Do I need to know how to code?</summary>
+              <div className="faq-a">
+                Not necessarily. Some bangers are no-code — prompt engineering,
+                agent setups, automations — while others touch light coding.
+                Skill levels range from beginner to advanced.
+              </div>
+            </details>
+            <details className="faq-item reveal">
+              <summary>How do I post a banger?</summary>
+              <div className="faq-a">
+                Drop a Loom, YouTube, or Vimeo link in any channel and add tags.
+                That's it.
+              </div>
+            </details>
+            <details className="faq-item reveal">
+              <summary>What if I get stuck?</summary>
+              <div className="faq-a">
+                Comment on the banger, DM the maker, or post in the channel —
+                you'll get a response from the community.
+              </div>
+            </details>
+            <details className="faq-item reveal">
+              <summary>How do I join?</summary>
+              <div className="faq-a">
+                Single-tap Google sign-in. We use Google-only signup to keep
+                duplicates and bots out.
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section className="final">
+        <div className="wrap">
+          <div className="final-panel reveal">
+            <div className="final-eyebrow">The whole loop</div>
+            <h2 className="final-title">
+              Watch one. Try it.
+              <br />
+              Post what you made.
+            </h2>
+            <p className="final-sub">
+              A members-only community for people making things with AI.
+            </p>
+            <div className="final-cta">
+              <button className="btn btn-light btn-lg" onClick={onJoin}>
+                <span className="g-glyph" />
+                Join with Google
+              </button>
+            </div>
+            <p className="final-note">
+              Currently invite-only via Google. Pricing announced soon.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <footer className="footer">
+        <div className="wrap">
+          <div className="footer-cols">
+            <div className="footer-brandcol">
+              <a className="brand" href="#top">
+                <span className="brand-mark" />
+                <span className="brand-name">
+                  B<span className="ai">ai</span>ngers
+                </span>
+              </a>
+              <p className="tagline">
+                AI bangers, under 10 minutes. A members-only community for people
+                actually making things with AI.
+              </p>
+            </div>
+            <div className="footer-col">
+              <h4>Product</h4>
+              <a href="/community">Community</a>
+              <a href="/school">Classroom</a>
+              <a href="/suggestions">Suggestions</a>
+              <a href="/about">About</a>
+            </div>
+            <div className="footer-col">
+              <h4>Legal</h4>
+              <a href="/terms">Terms</a>
+              <a href="/privacy">Privacy</a>
+              <a href="/about">Contact</a>
+            </div>
+          </div>
+          <div className="footer-bottom">
+            <span className="brand-name">
+              B<span className="ai">ai</span>ngers
+            </span>
+            <span>· baingers.com</span>
+            <span style={{ marginLeft: "auto" }}>
+              © 2026 Baingers. Invite-only via Google.
+            </span>
           </div>
         </div>
       </footer>
