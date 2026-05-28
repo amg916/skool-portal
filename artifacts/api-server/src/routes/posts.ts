@@ -2,8 +2,6 @@ import { Router } from "express";
 import { listPostsByChannel, createPost, deletePost, pinPost, unpinPost, getPost } from "../storage/posts.js";
 import { listChannels } from "../storage/channels.js";
 import { requireAuth, requireAdmin } from "../middlewares/auth.js";
-import { validateBody } from "../validate.js";
-import { CreatePostBody } from "@workspace/api-zod";
 import { extractLoomShareId, canonicalLoomShareUrl } from "../lib/loom.js";
 
 const router = Router();
@@ -18,9 +16,19 @@ router.get("/channels/:channelId/posts", requireAuth, async (req, res) => {
   res.json(posts);
 });
 
-router.post("/channels/:channelId/posts", requireAuth, validateBody(CreatePostBody), async (req, res) => {
+router.post("/channels/:channelId/posts", requireAuth, async (req, res) => {
   const channelId = Number(req.params.channelId);
-  const { body, loomUrl: rawLoomUrl } = req.body as { body: string; loomUrl?: string | null };
+  if (!Number.isInteger(channelId) || channelId <= 0) {
+    res.status(400).json({ error: "Invalid channelId" });
+    return;
+  }
+  const rawBody = req.body?.body;
+  if (typeof rawBody !== "string" || !rawBody.trim()) {
+    res.status(400).json({ error: "body required" });
+    return;
+  }
+  const body = rawBody.trim();
+  const rawLoomUrl = req.body?.loomUrl;
 
   const channels = await listChannels();
   const channel = channels.find((c) => c.id === channelId);
