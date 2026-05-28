@@ -29,7 +29,9 @@ router.get("/suggestions", requireAuth, async (req, res) => {
     .from(suggestionsTable)
     .leftJoin(usersTable, eq(usersTable.id, suggestionsTable.authorId))
     .orderBy(
-      sort === "new" ? desc(suggestionsTable.createdAt) : sql`vote_count desc, created_at desc`,
+      sort === "new"
+        ? desc(suggestionsTable.createdAt)
+        : sql`(select count(*) from ${suggestionVotesTable} v where v.suggestion_id = ${suggestionsTable.id}) desc, ${suggestionsTable.createdAt} desc`,
     );
   res.json(rows);
 });
