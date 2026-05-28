@@ -16,6 +16,7 @@ import searchRouter from "./search.js";
 import eventsRouter from "./events.js";
 import groupRouter from "./group.js";
 import meRouter from "./me.js";
+import oauthRouter from "./oauth.js";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(searchRouter);
 router.use(eventsRouter);
 router.use(groupRouter);
 router.use(meRouter);
+router.use(oauthRouter);
 
 export default router;

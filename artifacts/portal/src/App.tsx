@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,7 +7,9 @@ import NotFound from "@/pages/not-found";
 import { AuthGuard } from "@/components/auth-guard";
 import { AppLayout } from "@/components/layout";
 
+import LandingPage from "@/pages/landing";
 import LoginPage from "@/pages/login";
+import SignupPage from "@/pages/signup";
 import ForceChangePasswordPage from "@/pages/force-change-password";
 import CommunityPage from "@/pages/community";
 import SchoolPage from "@/pages/school";
@@ -31,27 +32,15 @@ import AdminProgress from "@/pages/admin/progress";
 
 const queryClient = new QueryClient();
 
-function RedirectToCommunity() {
-  const [, setLocation] = useLocation();
-  useEffect(() => {
-    setLocation("/community");
-  }, [setLocation]);
-  return null;
-}
-
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={LandingPage} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/signup" component={SignupPage} />
       <Route path="/force-change-password">
         <AuthGuard>
           <ForceChangePasswordPage />
-        </AuthGuard>
-      </Route>
-
-      <Route path="/">
-        <AuthGuard>
-          <RedirectToCommunity />
         </AuthGuard>
       </Route>
 

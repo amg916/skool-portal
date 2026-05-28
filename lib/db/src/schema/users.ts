@@ -6,7 +6,7 @@ export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
-  passwordHash: text("password_hash").notNull(),
+  passwordHash: text("password_hash"),
   role: text("role", { enum: ["admin", "member"] }).notNull().default("member"),
   isActive: boolean("is_active").notNull().default(true),
   forcePasswordChange: boolean("force_password_change").notNull().default(true),

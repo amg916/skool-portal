@@ -6,9 +6,9 @@ import { requireAuth, requireAdmin } from "../middlewares/auth.js";
 const router: IRouter = Router();
 
 const DEFAULTS = {
-  name: "Portal Community",
-  slug: "skool.amgcc.space",
-  description: "A community and learning portal — community, classroom, calendar, members, and leaderboards all in one place.",
+  name: "Baingers",
+  slug: "baingers.com",
+  description: "Bangers. AI bangers. Only the absolute heat — clips, breakdowns, and reactions to the best AI drops, every day.",
   bannerUrl: null as string | null,
   iconUrl: null as string | null,
 };
