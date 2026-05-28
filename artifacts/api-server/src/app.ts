@@ -52,6 +52,22 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 app.use("/uploads", express.static(UPLOAD_DIR));
 
 app.use("/api", generalApiLimit, router);
+
+const PORTAL_DIST = process.env["PORTAL_DIST"]
+  ? path.resolve(process.env["PORTAL_DIST"])
+  : path.resolve(process.cwd(), "../portal/dist/public");
+
+if (fs.existsSync(PORTAL_DIST)) {
+  app.use(express.static(PORTAL_DIST, { maxAge: "1h", index: false }));
+  app.get(/^(?!\/api\/|\/uploads\/).*/, (_req, res, next) => {
+    const indexFile = path.join(PORTAL_DIST, "index.html");
+    if (!fs.existsSync(indexFile)) return next();
+    res.sendFile(indexFile);
+  });
+} else {
+  logger.warn({ PORTAL_DIST }, "Portal dist not found — static SPA disabled");
+}
+
 app.use(errorHandler);
 
 export default app;
