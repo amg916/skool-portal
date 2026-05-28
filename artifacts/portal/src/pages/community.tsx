@@ -69,6 +69,15 @@ async function toggleLike(postId: number): Promise<{ liked: boolean }> {
   return res.json();
 }
 
+async function toggleCommentMade(commentId: number): Promise<{ isBuild: boolean }> {
+  const res = await fetch(`/api/comments/${commentId}/made-toggle`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to toggle 'I made this'");
+  return res.json();
+}
+
 function PostComments({ postId }: { postId: number }) {
   const { data: comments, isLoading } = useListComments(postId, {
     query: { enabled: !!postId },
@@ -114,40 +123,76 @@ function PostComments({ postId }: { postId: number }) {
 
   return (
     <div className="border-t border-border mt-4 pt-4 space-y-3">
-      {comments?.map((comment) => (
-        <div key={comment.id} className="flex gap-3">
-          <UserAvatar
-            name={comment.authorName}
-            avatarUrl={(comment as { authorAvatarUrl?: string | null }).authorAvatarUrl}
-            className="h-7 w-7"
-            fallbackClassName="text-[10px]"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-foreground">
-                {comment.authorName}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-              </span>
-              {(user?.role === "admin" || user?.id === comment.authorId) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Delete comment"
-                  className="h-5 w-5 ml-auto text-muted-foreground hover:text-destructive"
-                  onClick={() => handleDeleteComment(comment.id)}
-                >
-                  <Trash2 className="h-3 w-3" aria-hidden="true" />
-                </Button>
-              )}
+      {comments?.map((comment) => {
+        const isBuild = (comment as { isBuild?: boolean }).isBuild === true;
+        const canToggle = user?.role === "admin" || user?.id === comment.authorId;
+        return (
+          <div key={comment.id} className="flex gap-3">
+            <UserAvatar
+              name={comment.authorName}
+              avatarUrl={(comment as { authorAvatarUrl?: string | null }).authorAvatarUrl}
+              className="h-7 w-7"
+              fallbackClassName="text-[10px]"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-sm font-semibold text-foreground">
+                  {comment.authorName}
+                </span>
+                {isBuild && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                    <span aria-hidden="true">✓</span> I made this
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                </span>
+                {canToggle && (
+                  <div className="ml-auto flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`h-6 px-2 text-[11px] ${
+                        isBuild
+                          ? "text-emerald-700 hover:text-emerald-800"
+                          : "text-muted-foreground hover:text-emerald-700"
+                      }`}
+                      onClick={async () => {
+                        try {
+                          await toggleCommentMade(comment.id);
+                          queryClient.invalidateQueries({
+                            queryKey: getListCommentsQueryKey(postId),
+                          });
+                        } catch {
+                          toast({
+                            title: "Couldn't update",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      aria-label={isBuild ? "Remove I made this" : "Mark I made this"}
+                    >
+                      {isBuild ? "Unmark made" : "I made this"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Delete comment"
+                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDeleteComment(comment.id)}
+                    >
+                      <Trash2 className="h-3 w-3" aria-hidden="true" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-foreground whitespace-pre-wrap mt-0.5">
+                {comment.body}
+              </p>
             </div>
-            <p className="text-sm text-foreground whitespace-pre-wrap mt-0.5">
-              {comment.body}
-            </p>
           </div>
-        </div>
-      ))}
+        );
+      })}
       <div className="flex gap-2 pt-2">
         <Textarea
           placeholder="Write a comment..."

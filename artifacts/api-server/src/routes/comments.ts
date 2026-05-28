@@ -1,5 +1,11 @@
 import { Router } from "express";
-import { listCommentsByPost, createComment, deleteComment, getComment } from "../storage/comments.js";
+import {
+  listCommentsByPost,
+  createComment,
+  deleteComment,
+  getComment,
+  setCommentIsBuild,
+} from "../storage/comments.js";
 import { requireAuth } from "../middlewares/auth.js";
 import { validateBody } from "../validate.js";
 import { CreateCommentBody } from "@workspace/api-zod";
@@ -40,6 +46,26 @@ router.delete("/comments/:commentId", requireAuth, async (req, res) => {
   }
   await deleteComment(commentId);
   res.status(204).send();
+});
+
+router.post("/comments/:commentId/made-toggle", requireAuth, async (req, res) => {
+  const commentId = Number(req.params.commentId);
+  if (!Number.isInteger(commentId)) {
+    res.status(400).json({ error: "Invalid commentId" });
+    return;
+  }
+  const comment = await getComment(commentId);
+  if (!comment) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  if (comment.authorId !== req.user!.id && req.user!.role !== "admin") {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const next = !comment.isBuild;
+  await setCommentIsBuild(commentId, next);
+  res.json({ isBuild: next });
 });
 
 export default router;

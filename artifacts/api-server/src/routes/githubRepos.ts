@@ -25,7 +25,7 @@ router.get("/admin/github-repos", requireAuth, requireAdmin, async (_req, res) =
       res.status(r.status).json({ error: `GitHub error: ${text.slice(0, 200)}` });
       return;
     }
-    const data: any[] = await r.json();
+    const data = (await r.json()) as Array<Record<string, unknown>>;
     res.json(
       data.map((repo) => ({
         id: repo.id,

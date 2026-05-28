@@ -25,8 +25,8 @@ router.get("/leaderboards", requireAuth, async (req, res) => {
     ? sql`select author_id, count(*)::int as c from ${postsTable} where created_at >= ${since.toISOString()} group by author_id`
     : sql`select author_id, count(*)::int as c from ${postsTable} group by author_id`;
   const commentClause = since
-    ? sql`select author_id, count(*)::int as c from ${commentsTable} where created_at >= ${since.toISOString()} group by author_id`
-    : sql`select author_id, count(*)::int as c from ${commentsTable} group by author_id`;
+    ? sql`select author_id, count(*) filter (where is_build = false)::int as c, count(*) filter (where is_build = true)::int as b from ${commentsTable} where created_at >= ${since.toISOString()} group by author_id`
+    : sql`select author_id, count(*) filter (where is_build = false)::int as c, count(*) filter (where is_build = true)::int as b from ${commentsTable} group by author_id`;
 
   const rows = await db.execute<{
     user_id: number;
@@ -34,11 +34,12 @@ router.get("/leaderboards", requireAuth, async (req, res) => {
     avatar_url: string | null;
     points: number;
   }>(sql`
-    with p as (${postClause}),
-         c as (${commentClause})
+    with post_counts as (${postClause}),
+         comment_counts as (${commentClause})
     select u.id as user_id, u.name as name, u.avatar_url as avatar_url,
-           coalesce((select c from p where author_id = u.id), 0) * 3 +
-           coalesce((select c from c where author_id = u.id), 0) * 1 as points
+           coalesce((select c from post_counts where author_id = u.id), 0) * 3 +
+           coalesce((select c from comment_counts where author_id = u.id), 0) * 1 +
+           coalesce((select b from comment_counts where author_id = u.id), 0) * 2 as points
     from ${usersTable} u
     where u.is_active = true
     order by points desc, u.created_at asc

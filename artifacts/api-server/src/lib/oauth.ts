@@ -95,7 +95,7 @@ export const PROVIDERS: Record<Provider, () => OAuthConfig | null> = {
             },
           });
           if (r.ok) {
-            const emails: Array<{ email: string; primary: boolean; verified: boolean }> = await r.json();
+            const emails = (await r.json()) as Array<{ email: string; primary: boolean; verified: boolean }>;
             const primary = emails.find((e) => e.primary && e.verified) ?? emails.find((e) => e.verified);
             email = primary?.email ?? null;
           }

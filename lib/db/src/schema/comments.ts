@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { postsTable } from "./posts";
@@ -9,6 +9,7 @@ export const commentsTable = pgTable("comments", {
   postId: integer("post_id").notNull().references(() => postsTable.id, { onDelete: "cascade" }),
   authorId: integer("author_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
   body: text("body").notNull(),
+  isBuild: boolean("is_build").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

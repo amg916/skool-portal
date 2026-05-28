@@ -1013,8 +1013,13 @@ components:
           type: integer
         authorName:
           type: string
+        authorAvatarUrl:
+          type: string
+          nullable: true
         body:
           type: string
+        isBuild:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -1024,6 +1029,7 @@ components:
         - authorId
         - authorName
         - body
+        - isBuild
         - createdAt
 
     CreateCommentRequest:
