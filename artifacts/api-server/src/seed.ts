@@ -4,12 +4,12 @@ import { logger } from "./lib/logger.js";
 
 const WELCOME_BODY = `Welcome to Baingers 🔥
 
-If you're here, you're already done with the 90-minute lecture circuit. Baingers exists because watching ≠ doing — every video here ends in a build challenge you can ship the same day.
+If you're here, you're already done with the 90-minute lecture circuit. Baingers exists because watching ≠ doing — every video here ends with a quick build idea you can try the same day.
 
 The loop:
 1. Watch the banger (under 10 min, every time)
-2. Build the thing
-3. Post what you shipped — the community gives feedback
+2. Try it
+3. Post what you made — the community gives feedback
 
 Hit play on the video, then drop a quick hello in #introductions.`;
 
@@ -50,7 +50,7 @@ export async function seed() {
     .insert(channelsTable)
     .values([
       { name: "General", description: "Bangers, builds, hot takes — drop them here.", adminsOnly: false, isDefault: true, sortOrder: 0 },
-      { name: "Introductions", description: "New here? Tell us who you are and what you ship.", adminsOnly: false, isDefault: false, sortOrder: 1 },
+      { name: "Introductions", description: "New here? Tell us who you are and what you make.", adminsOnly: false, isDefault: false, sortOrder: 1 },
       { name: "Announcements", description: "Team updates and pinned reading.", adminsOnly: true, isDefault: false, sortOrder: 2 },
     ])
     .returning();

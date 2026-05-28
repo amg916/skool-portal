@@ -11,6 +11,10 @@ export const postsTable = pgTable("posts", {
   body: text("body").notNull(),
   isPinned: boolean("is_pinned").notNull().default(false),
   loomUrl: text("loom_url"),
+  videoUrl: text("video_url"),
+  videoProvider: text("video_provider", { enum: ["loom", "youtube", "vimeo"] }),
+  videoEmbedId: text("video_embed_id"),
+  tags: text("tags").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

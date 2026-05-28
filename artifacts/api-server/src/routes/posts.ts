@@ -3,6 +3,7 @@ import { listPostsByChannel, createPost, deletePost, pinPost, unpinPost, getPost
 import { listChannels } from "../storage/channels.js";
 import { requireAuth, requireAdmin } from "../middlewares/auth.js";
 import { extractLoomShareId, canonicalLoomShareUrl } from "../lib/loom.js";
+import { parseVideoUrl } from "../lib/video.js";
 
 const router = Router();
 
@@ -37,17 +38,34 @@ router.post("/channels/:channelId/posts", requireAuth, async (req, res) => {
     return;
   }
 
+  const rawVideoUrl = req.body?.videoUrl ?? rawLoomUrl;
+  const rawTags = req.body?.tags;
+  let videoUrl: string | null = null;
+  let videoProvider: "loom" | "youtube" | "vimeo" | null = null;
+  let videoEmbedId: string | null = null;
   let loomUrl: string | null = null;
-  if (typeof rawLoomUrl === "string" && rawLoomUrl.trim()) {
-    const shareId = extractLoomShareId(rawLoomUrl);
-    if (!shareId) {
-      res.status(400).json({ error: "Loom link looks invalid. Paste a https://www.loom.com/share/... URL." });
+  if (typeof rawVideoUrl === "string" && rawVideoUrl.trim()) {
+    const parsed = parseVideoUrl(rawVideoUrl);
+    if (!parsed) {
+      res.status(400).json({ error: "Video link not recognized. Use Loom, YouTube or Vimeo." });
       return;
     }
-    loomUrl = canonicalLoomShareUrl(shareId);
+    videoUrl = parsed.canonicalUrl;
+    videoProvider = parsed.provider;
+    videoEmbedId = parsed.embedId;
+    if (parsed.provider === "loom") loomUrl = parsed.canonicalUrl;
   }
 
-  const post = await createPost(channelId, req.user!.id, body, loomUrl);
+  const tags = Array.isArray(rawTags)
+    ? rawTags.filter((t) => typeof t === "string").map((t) => String(t).trim().toLowerCase()).filter((t) => t.length > 0 && t.length <= 32).slice(0, 6)
+    : [];
+
+  const post = await createPost(channelId, req.user!.id, body, loomUrl, {
+    videoUrl,
+    videoProvider,
+    videoEmbedId,
+    tags,
+  });
   res.status(201).json(post);
 });
 

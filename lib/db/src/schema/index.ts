@@ -10,3 +10,6 @@ export * from "./events";
 export * from "./group_settings";
 export * from "./user_identities";
 export * from "./chats";
+export * from "./bookmarks";
+export * from "./reactions";
+export * from "./suggestions";

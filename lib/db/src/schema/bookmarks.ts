@@ -1,0 +1,16 @@
+import { pgTable, serial, integer, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { postsTable } from "./posts";
+import { usersTable } from "./users";
+
+export const postBookmarksTable = pgTable(
+  "post_bookmarks",
+  {
+    id: serial("id").primaryKey(),
+    postId: integer("post_id").notNull().references(() => postsTable.id, { onDelete: "cascade" }),
+    userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({ uniq: uniqueIndex("post_bookmarks_user_post_uniq").on(t.postId, t.userId) }),
+);
+
+export type PostBookmark = typeof postBookmarksTable.$inferSelect;

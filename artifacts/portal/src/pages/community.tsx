@@ -40,10 +40,11 @@ import { AdminOnlyNotice } from "@/components/community/AdminOnlyNotice";
 import { GroupInfoCard } from "@/components/community/GroupInfoCard";
 import { LeaderboardWidget } from "@/components/community/LeaderboardWidget";
 import { UserAvatar } from "@/components/user-avatar";
-import { LoomEmbed } from "@/components/community/LoomEmbed";
+import { VideoEmbed } from "@/components/community/VideoEmbed";
 import { UpcomingEventBanner } from "@/components/community/UpcomingEventBanner";
 import { RecentCommenters } from "@/components/community/RecentCommenters";
-import { extractLoomShareId } from "@/lib/loom";
+import { parseVideoUrl } from "@/lib/video";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 
 const CATEGORY_DOT_COLORS = [
   "bg-blue-500",
@@ -178,26 +179,59 @@ function PostComments({ postId }: { postId: number }) {
 }
 
 type RecentCommenter = { id: number; name: string; avatarUrl: string | null };
+type ReactionAgg = { emoji: string; count: number; mine: boolean };
 
 type ExtraPostFields = {
   authorAvatarUrl: string | null;
   likeCount: number;
   likedByMe: boolean;
   loomUrl: string | null;
+  videoUrl: string | null;
+  videoProvider: string | null;
+  videoEmbedId: string | null;
+  tags: string[] | null;
+  bookmarkedByMe: boolean;
+  reactions: ReactionAgg[];
   lastCommentAt: string | null;
   recentCommenters: RecentCommenter[];
 };
 
+const REACTION_PALETTE = ["🔥", "❤️", "👏", "🤯", "⚡", "🙌"];
+
+async function toggleBookmark(postId: number): Promise<{ bookmarked: boolean }> {
+  const r = await fetch(`/api/posts/${postId}/bookmark/toggle`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!r.ok) throw new Error("Failed to bookmark");
+  return r.json();
+}
+
+async function toggleReaction(postId: number, emoji: string): Promise<{ reacted: boolean }> {
+  const r = await fetch(`/api/posts/${postId}/reactions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ emoji }),
+  });
+  if (!r.ok) throw new Error("Failed to react");
+  return r.json();
+}
+
 async function createPostRaw(
   channelId: number,
   body: string,
-  loomUrl: string | null,
+  videoUrl: string | null,
+  tags: string[],
 ): Promise<void> {
+  const payload: Record<string, unknown> = { body };
+  if (videoUrl) payload.videoUrl = videoUrl;
+  if (tags.length) payload.tags = tags;
   const res = await fetch(`/api/channels/${channelId}/posts`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify(loomUrl ? { body, loomUrl } : { body }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
@@ -227,6 +261,7 @@ export default function CommunityPage() {
 
   const [newPostContent, setNewPostContent] = useState("");
   const [newLoomUrl, setNewLoomUrl] = useState("");
+  const [newTags, setNewTags] = useState("");
   const [composerOpen, setComposerOpen] = useState(false);
   const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
   const [likePending, setLikePending] = useState<Record<number, boolean>>({});
@@ -244,20 +279,26 @@ export default function CommunityPage() {
 
   const handleCreatePost = async () => {
     if (!newPostContent.trim() || !activeChannelId) return;
-    const trimmedLoom = newLoomUrl.trim();
-    if (trimmedLoom && !extractLoomShareId(trimmedLoom)) {
+    const trimmedVideo = newLoomUrl.trim();
+    if (trimmedVideo && !parseVideoUrl(trimmedVideo)) {
       toast({
-        title: "That Loom link doesn't look right",
-        description: "Paste a https://www.loom.com/share/... URL.",
+        title: "Video link not recognized",
+        description: "Use a Loom, YouTube or Vimeo URL.",
         variant: "destructive",
       });
       return;
     }
+    const tags = newTags
+      .split(/[,\s]+/)
+      .map((t) => t.replace(/^#/, "").trim().toLowerCase())
+      .filter((t) => t.length > 0 && t.length <= 32)
+      .slice(0, 6);
     setPosting(true);
     try {
-      await createPostRaw(activeChannelId, newPostContent, trimmedLoom || null);
+      await createPostRaw(activeChannelId, newPostContent, trimmedVideo || null, tags);
       setNewPostContent("");
       setNewLoomUrl("");
+      setNewTags("");
       setComposerOpen(false);
       queryClient.invalidateQueries({
         queryKey: getListPostsByChannelQueryKey(activeChannelId),
@@ -270,6 +311,36 @@ export default function CommunityPage() {
       });
     } finally {
       setPosting(false);
+    }
+  };
+
+  const handleBookmark = async (postId: number) => {
+    try {
+      await toggleBookmark(postId);
+      queryClient.invalidateQueries({
+        queryKey: getListPostsByChannelQueryKey(activeChannelId!),
+      });
+    } catch (err) {
+      toast({
+        title: "Couldn't save",
+        description: err instanceof Error ? err.message : "Try again",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReact = async (postId: number, emoji: string) => {
+    try {
+      await toggleReaction(postId, emoji);
+      queryClient.invalidateQueries({
+        queryKey: getListPostsByChannelQueryKey(activeChannelId!),
+      });
+    } catch (err) {
+      toast({
+        title: "Couldn't react",
+        description: err instanceof Error ? err.message : "Try again",
+        variant: "destructive",
+      });
     }
   };
 
@@ -334,12 +405,19 @@ export default function CommunityPage() {
                     <Input
                       type="url"
                       inputMode="url"
-                      placeholder="Paste a Loom link (loom.com/share/...)"
+                      placeholder="Paste a Loom, YouTube or Vimeo link (optional)"
                       value={newLoomUrl}
                       onChange={(e) => setNewLoomUrl(e.target.value)}
                       className="pl-9 text-sm"
                     />
                   </div>
+                  <Input
+                    type="text"
+                    placeholder="Tags (comma-separated, e.g. agents, rag, voice)"
+                    value={newTags}
+                    onChange={(e) => setNewTags(e.target.value)}
+                    className="text-sm"
+                  />
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="ghost"
@@ -572,9 +650,26 @@ export default function CommunityPage() {
                       </p>
                     )}
 
-                    {post.loomUrl && (
+                    {(post.videoUrl || post.loomUrl) && (
                       <div className="mt-4">
-                        <LoomEmbed url={post.loomUrl} />
+                        <VideoEmbed
+                          url={post.videoUrl ?? post.loomUrl ?? ""}
+                          provider={post.videoProvider}
+                          embedId={post.videoEmbedId}
+                        />
+                      </div>
+                    )}
+
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {post.tags.map((t) => (
+                          <span
+                            key={t}
+                            className="text-[10px] uppercase tracking-wider bg-muted text-muted-foreground px-2 py-0.5 rounded font-medium"
+                          >
+                            #{t}
+                          </span>
+                        ))}
                       </div>
                     )}
 
@@ -610,6 +705,66 @@ export default function CommunityPage() {
                           <MessageSquare className="h-4 w-4 mr-1.5" />
                           <span className="text-xs font-medium">{post.commentCount}</span>
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleBookmark(post.id)}
+                          aria-pressed={!!post.bookmarkedByMe}
+                          aria-label={post.bookmarkedByMe ? "Remove bookmark" : "Save for later"}
+                          className={`h-8 px-2 ${
+                            post.bookmarkedByMe ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {post.bookmarkedByMe ? (
+                            <BookmarkCheck className="h-4 w-4" />
+                          ) : (
+                            <Bookmark className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {post.reactions.map((r) => (
+                          <button
+                            key={r.emoji}
+                            type="button"
+                            onClick={() => handleReact(post.id, r.emoji)}
+                            className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                              r.mine
+                                ? "bg-foreground text-background border-foreground"
+                                : "bg-muted/50 border-border hover:border-foreground/40"
+                            }`}
+                            aria-pressed={r.mine}
+                            aria-label={`React ${r.emoji}`}
+                          >
+                            <span>{r.emoji}</span>
+                            <span className="ml-1 font-medium">{r.count}</span>
+                          </button>
+                        ))}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                              aria-label="Add a reaction"
+                            >
+                              <span className="text-base">+</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="flex gap-1 p-2">
+                            {REACTION_PALETTE.map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => handleReact(post.id, emoji)}
+                                className="text-lg p-1.5 rounded hover:bg-muted transition-colors"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
 
                       {recentCommenters.length > 0 && (

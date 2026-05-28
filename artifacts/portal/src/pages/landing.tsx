@@ -28,22 +28,22 @@ const FEATURES = [
   {
     icon: Clock,
     title: "Under 10 minutes",
-    body: "Every video hits the point fast. No 90-minute lectures. No filler. Watch on a coffee break, ship before lunch.",
+    body: "Every video hits the point fast. No 90-minute lectures. No filler. Watch one over coffee, try it the same morning.",
   },
   {
     icon: Hammer,
     title: "Actually try it",
-    body: "Each banger ends with a tight build challenge you can do today. The community ships the work in public.",
+    body: "Each banger ends with a quick build idea you can try today. The community shows their work back in public.",
   },
   {
     icon: Wand2,
     title: "The best of new AI",
-    body: "Hand-picked drops, model releases, agent breakdowns, prompt patterns that work in production right now.",
+    body: "Hand-picked drops, model releases, agent breakdowns, prompt patterns that work in real workflows right now.",
   },
   {
     icon: Users,
     title: "Builders, not lurkers",
-    body: "Members are people shipping with AI. Founders, engineers, designers, hobbyists. Trade techniques, not opinions.",
+    body: "Members are people actually making things with AI. Founders, engineers, designers, hobbyists. Trade techniques, not opinions.",
   },
 ];
 
@@ -57,7 +57,7 @@ const BANGERS = [
     pill: "RAG",
   },
   {
-    title: "Cursor → Vercel in 9 minutes: ship a working SaaS landing today",
+    title: "Cursor → live site in 9 minutes: a working SaaS landing today",
     pill: "Tools",
   },
   {
@@ -68,8 +68,8 @@ const BANGERS = [
 
 const HOW = [
   "Watch the banger — average 7 minutes.",
-  "Ship the build challenge — usually same day.",
-  "Post what you made — community gives feedback.",
+  "Try the build idea — usually same day.",
+  "Post what you made — the community gives feedback.",
 ];
 
 export default function LandingPage() {
@@ -219,7 +219,7 @@ export default function LandingPage() {
                 The Baingers loop
               </h2>
               <p className="text-muted-foreground mt-4 text-lg">
-                Why members ship more in a week here than they did all last
+                Why members try more in a week here than they did all last
                 quarter.
               </p>
               <ul className="mt-8 space-y-4">
@@ -235,7 +235,7 @@ export default function LandingPage() {
             </div>
             <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
               <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
-                What members shipped last week
+                What members made last week
               </div>
               <ul className="space-y-3 text-sm">
                 {[

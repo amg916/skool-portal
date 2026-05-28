@@ -30,6 +30,7 @@ const SUB_NAV = [
   { href: "/calendar", label: "Calendar" },
   { href: "/members", label: "Members" },
   { href: "/leaderboards", label: "Leaderboards" },
+  { href: "/suggestions", label: "Suggestions" },
   { href: "/about", label: "About" },
 ] as const;
 

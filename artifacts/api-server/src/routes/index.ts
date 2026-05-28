@@ -18,6 +18,10 @@ import groupRouter from "./group.js";
 import meRouter from "./me.js";
 import oauthRouter from "./oauth.js";
 import chatsRouter from "./chats.js";
+import bookmarksRouter from "./bookmarks.js";
+import reactionsRouter from "./reactions.js";
+import suggestionsRouter from "./suggestions.js";
+import githubReposRouter from "./githubRepos.js";
 
 const router: IRouter = Router();
 
@@ -40,5 +44,9 @@ router.use(groupRouter);
 router.use(meRouter);
 router.use(oauthRouter);
 router.use(chatsRouter);
+router.use(bookmarksRouter);
+router.use(reactionsRouter);
+router.use(suggestionsRouter);
+router.use(githubReposRouter);
 
 export default router;
