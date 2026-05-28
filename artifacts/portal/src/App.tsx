@@ -6,6 +6,8 @@ import NotFound from "@/pages/not-found";
 
 import { AuthGuard } from "@/components/auth-guard";
 import { AppLayout } from "@/components/layout";
+import { ChatProvider } from "@/lib/chat-context";
+import { ChatPanelHost } from "@/components/chat-panel-host";
 
 import LandingPage from "@/pages/landing";
 import LoginPage from "@/pages/login";
@@ -193,10 +195,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
+        <ChatProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <ChatPanelHost />
+          <Toaster />
+        </ChatProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

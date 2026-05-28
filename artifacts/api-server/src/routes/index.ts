@@ -17,6 +17,7 @@ import eventsRouter from "./events.js";
 import groupRouter from "./group.js";
 import meRouter from "./me.js";
 import oauthRouter from "./oauth.js";
+import chatsRouter from "./chats.js";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(eventsRouter);
 router.use(groupRouter);
 router.use(meRouter);
 router.use(oauthRouter);
+router.use(chatsRouter);
 
 export default router;

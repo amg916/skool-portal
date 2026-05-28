@@ -22,6 +22,8 @@ import { UserAvatar } from "@/components/user-avatar";
 import { SearchDropdown } from "@/components/search-dropdown";
 import { useGroup } from "@/lib/group";
 import { useToast } from "@/hooks/use-toast";
+import { useChat } from "@/lib/chat-context";
+import { useQuery } from "@tanstack/react-query";
 
 const SUB_NAV = [
   { href: "/community", label: "Community" },
@@ -49,6 +51,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const groupName = group?.name ?? "Portal";
   const groupIconUrl = group?.iconUrl ?? null;
   const brandInitial = groupName.charAt(0).toUpperCase();
+  const { openChat } = useChat();
+  const { data: unread } = useQuery<{ count: number }>({
+    queryKey: ["chats-unread"],
+    queryFn: async () => {
+      const r = await fetch("/api/chats/unread/count", { credentials: "include" });
+      if (!r.ok) return { count: 0 };
+      return r.json();
+    },
+    refetchInterval: 30_000,
+    enabled: !!user,
+  });
+  const unreadCount = unread?.count ?? 0;
 
   const handleLogout = () => {
     logoutMut.mutate(undefined, {
@@ -123,16 +137,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Messages"
-              className="text-muted-foreground hover:text-foreground"
+              aria-label={`Messages${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+              className="relative text-muted-foreground hover:text-foreground"
+              onClick={() => openChat()}
             >
               <MessageCircle className="h-5 w-5" aria-hidden="true" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 h-3 min-w-[12px] px-1 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </Button>
             <Button
               variant="ghost"
               size="icon"
               aria-label="Notifications"
               className="text-muted-foreground hover:text-foreground"
+              title="Notifications coming soon"
             >
               <Bell className="h-5 w-5" aria-hidden="true" />
             </Button>

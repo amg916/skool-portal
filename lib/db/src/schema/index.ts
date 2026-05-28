@@ -9,3 +9,4 @@ export * from "./likes";
 export * from "./events";
 export * from "./group_settings";
 export * from "./user_identities";
+export * from "./chats";

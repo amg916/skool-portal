@@ -5,6 +5,8 @@ import { GroupInfoCard } from "@/components/community/GroupInfoCard";
 import { Calendar as CalendarIcon, MessageCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { UserAvatar } from "@/components/user-avatar";
+import { useChat } from "@/lib/chat-context";
+import { useGetMe } from "@workspace/api-client-react";
 
 type Member = {
   id: number;
@@ -27,6 +29,8 @@ type Filter = "all" | "admins";
 export default function MembersPage() {
   const { data: members, isLoading } = useQuery({ queryKey: ["members"], queryFn: fetchMembers });
   const [filter, setFilter] = useState<Filter>("all");
+  const { openChat } = useChat();
+  const { data: me } = useGetMe();
 
   const filtered = (members ?? []).filter((m) => {
     if (filter === "admins") return m.role === "admin";
@@ -86,10 +90,16 @@ export default function MembersPage() {
                       <span>Joined {format(new Date(m.joinedAt), "MMM d, yyyy")}</span>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
-                    <MessageCircle className="h-4 w-4 mr-1.5" />
-                    Chat
-                  </Button>
+                  {me?.id !== m.id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openChat(m.id)}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-1.5" />
+                      Chat
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
