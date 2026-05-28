@@ -4,6 +4,7 @@ import { listChannels } from "../storage/channels.js";
 import { requireAuth, requireAdmin } from "../middlewares/auth.js";
 import { validateBody } from "../validate.js";
 import { CreatePostBody } from "@workspace/api-zod";
+import { extractLoomShareId, canonicalLoomShareUrl } from "../lib/loom.js";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.get("/channels/:channelId/posts", requireAuth, async (req, res) => {
 
 router.post("/channels/:channelId/posts", requireAuth, validateBody(CreatePostBody), async (req, res) => {
   const channelId = Number(req.params.channelId);
-  const { body } = req.body;
+  const { body, loomUrl: rawLoomUrl } = req.body as { body: string; loomUrl?: string | null };
 
   const channels = await listChannels();
   const channel = channels.find((c) => c.id === channelId);
@@ -28,7 +29,17 @@ router.post("/channels/:channelId/posts", requireAuth, validateBody(CreatePostBo
     return;
   }
 
-  const post = await createPost(channelId, req.user!.id, body);
+  let loomUrl: string | null = null;
+  if (typeof rawLoomUrl === "string" && rawLoomUrl.trim()) {
+    const shareId = extractLoomShareId(rawLoomUrl);
+    if (!shareId) {
+      res.status(400).json({ error: "Loom link looks invalid. Paste a https://www.loom.com/share/... URL." });
+      return;
+    }
+    loomUrl = canonicalLoomShareUrl(shareId);
+  }
+
+  const post = await createPost(channelId, req.user!.id, body, loomUrl);
   res.status(201).json(post);
 });
 

@@ -10,6 +10,7 @@ export const postsTable = pgTable("posts", {
   authorId: integer("author_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
   body: text("body").notNull(),
   isPinned: boolean("is_pinned").notNull().default(false),
+  loomUrl: text("loom_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

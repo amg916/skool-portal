@@ -23,8 +23,10 @@ import {
   Send,
   Loader2,
   ThumbsUp,
+  Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -38,6 +40,10 @@ import { AdminOnlyNotice } from "@/components/community/AdminOnlyNotice";
 import { GroupInfoCard } from "@/components/community/GroupInfoCard";
 import { LeaderboardWidget } from "@/components/community/LeaderboardWidget";
 import { UserAvatar } from "@/components/user-avatar";
+import { LoomEmbed } from "@/components/community/LoomEmbed";
+import { UpcomingEventBanner } from "@/components/community/UpcomingEventBanner";
+import { RecentCommenters } from "@/components/community/RecentCommenters";
+import { extractLoomShareId } from "@/lib/loom";
 
 const CATEGORY_DOT_COLORS = [
   "bg-blue-500",
@@ -171,11 +177,33 @@ function PostComments({ postId }: { postId: number }) {
   );
 }
 
+type RecentCommenter = { id: number; name: string; avatarUrl: string | null };
+
 type ExtraPostFields = {
   authorAvatarUrl: string | null;
   likeCount: number;
   likedByMe: boolean;
+  loomUrl: string | null;
+  lastCommentAt: string | null;
+  recentCommenters: RecentCommenter[];
 };
+
+async function createPostRaw(
+  channelId: number,
+  body: string,
+  loomUrl: string | null,
+): Promise<void> {
+  const res = await fetch(`/api/channels/${channelId}/posts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(loomUrl ? { body, loomUrl } : { body }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+  }
+}
 
 export default function CommunityPage() {
   const { channelId } = useParams();
@@ -198,9 +226,11 @@ export default function CommunityPage() {
   const unpinPost = useUnpinPost();
 
   const [newPostContent, setNewPostContent] = useState("");
+  const [newLoomUrl, setNewLoomUrl] = useState("");
   const [composerOpen, setComposerOpen] = useState(false);
   const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
   const [likePending, setLikePending] = useState<Record<number, boolean>>({});
+  const [posting, setPosting] = useState(false);
 
   useEffect(() => {
     if (channels && channels.length > 0 && !channelId) {
@@ -208,20 +238,35 @@ export default function CommunityPage() {
     }
   }, [channels, channelId, setLocation]);
 
-  const handleCreatePost = () => {
+  const handleCreatePost = async () => {
     if (!newPostContent.trim() || !activeChannelId) return;
-    createPost.mutate(
-      { channelId: activeChannelId!, data: { body: newPostContent } },
-      {
-        onSuccess: () => {
-          setNewPostContent("");
-          setComposerOpen(false);
-          queryClient.invalidateQueries({
-            queryKey: getListPostsByChannelQueryKey(activeChannelId),
-          });
-        },
-      },
-    );
+    const trimmedLoom = newLoomUrl.trim();
+    if (trimmedLoom && !extractLoomShareId(trimmedLoom)) {
+      toast({
+        title: "That Loom link doesn't look right",
+        description: "Paste a https://www.loom.com/share/... URL.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setPosting(true);
+    try {
+      await createPostRaw(activeChannelId, newPostContent, trimmedLoom || null);
+      setNewPostContent("");
+      setNewLoomUrl("");
+      setComposerOpen(false);
+      queryClient.invalidateQueries({
+        queryKey: getListPostsByChannelQueryKey(activeChannelId),
+      });
+    } catch (err) {
+      toast({
+        title: "Post failed",
+        description: err instanceof Error ? err.message : "Try again",
+        variant: "destructive",
+      });
+    } finally {
+      setPosting(false);
+    }
   };
 
   const handleToggleLike = async (postId: number) => {
@@ -275,28 +320,38 @@ export default function CommunityPage() {
                   </div>
                   <Textarea
                     autoFocus
-                    placeholder="Write something..."
+                    placeholder="What banger are you sharing?"
                     value={newPostContent}
                     onChange={(e) => setNewPostContent(e.target.value)}
                     className="min-h-[120px] resize-none border-border focus-visible:ring-1"
                   />
+                  <div className="relative">
+                    <Video className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      type="url"
+                      inputMode="url"
+                      placeholder="Paste a Loom link (loom.com/share/...)"
+                      value={newLoomUrl}
+                      onChange={(e) => setNewLoomUrl(e.target.value)}
+                      className="pl-9 text-sm"
+                    />
+                  </div>
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="ghost"
                       onClick={() => {
                         setComposerOpen(false);
                         setNewPostContent("");
+                        setNewLoomUrl("");
                       }}
                     >
                       Cancel
                     </Button>
                     <Button
                       onClick={handleCreatePost}
-                      disabled={!newPostContent.trim() || createPost.isPending}
+                      disabled={!newPostContent.trim() || posting}
                     >
-                      {createPost.isPending && (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      )}
+                      {posting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                       Post
                     </Button>
                   </div>
@@ -320,6 +375,8 @@ export default function CommunityPage() {
               )}
             </div>
           )}
+
+          <UpcomingEventBanner />
 
           <div className="flex items-center justify-between gap-2 overflow-x-auto py-1">
             <div className="flex items-center gap-2">
@@ -370,10 +427,16 @@ export default function CommunityPage() {
                 const post = postRaw as typeof postRaw & ExtraPostFields;
                 const liked = !!post.likedByMe;
                 const likeCount = post.likeCount ?? 0;
+                const recentCommenters = post.recentCommenters ?? [];
+                const lastCommentAt = post.lastCommentAt ?? null;
                 return (
                   <article
                     key={post.id}
-                    className="bg-card border border-border rounded-xl p-5 shadow-sm hover:border-foreground/20 transition-colors"
+                    className={`bg-card border rounded-xl p-5 shadow-sm hover:border-foreground/20 transition-colors ${
+                      post.isPinned
+                        ? "border-amber-300 ring-1 ring-amber-200/60"
+                        : "border-border"
+                    }`}
                   >
                     <div className="flex items-start gap-3">
                       <UserAvatar
@@ -498,37 +561,62 @@ export default function CommunityPage() {
                       </p>
                     )}
 
-                    <div className="mt-4 flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleLike(post.id)}
-                        disabled={likePending[post.id]}
-                        aria-pressed={liked}
-                        aria-label={liked ? "Unlike post" : "Like post"}
-                        className={`h-8 px-2 ${
-                          liked
-                            ? "text-foreground"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        <ThumbsUp
-                          className={`h-4 w-4 mr-1.5 ${liked ? "fill-foreground" : ""}`}
-                        />
-                        <span className="text-xs font-medium">{likeCount}</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setExpandedComments((p) => ({ ...p, [post.id]: !p[post.id] }))
-                        }
-                        className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                        aria-expanded={!!expandedComments[post.id]}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-1.5" />
-                        <span className="text-xs font-medium">{post.commentCount}</span>
-                      </Button>
+                    {post.loomUrl && (
+                      <div className="mt-4">
+                        <LoomEmbed url={post.loomUrl} />
+                      </div>
+                    )}
+
+                    <div className="mt-4 flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleLike(post.id)}
+                          disabled={likePending[post.id]}
+                          aria-pressed={liked}
+                          aria-label={liked ? "Unlike post" : "Like post"}
+                          className={`h-8 px-2 ${
+                            liked
+                              ? "text-foreground"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <ThumbsUp
+                            className={`h-4 w-4 mr-1.5 ${liked ? "fill-foreground" : ""}`}
+                          />
+                          <span className="text-xs font-medium">{likeCount}</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setExpandedComments((p) => ({ ...p, [post.id]: !p[post.id] }))
+                          }
+                          className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                          aria-expanded={!!expandedComments[post.id]}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-1.5" />
+                          <span className="text-xs font-medium">{post.commentCount}</span>
+                        </Button>
+                      </div>
+
+                      {recentCommenters.length > 0 && (
+                        <RecentCommenters commenters={recentCommenters} />
+                      )}
+
+                      {lastCommentAt && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedComments((p) => ({ ...p, [post.id]: true }))
+                          }
+                          className="text-xs font-medium text-blue-600 hover:underline"
+                        >
+                          New comment{" "}
+                          {formatDistanceToNow(new Date(lastCommentAt), { addSuffix: true })}
+                        </button>
+                      )}
                     </div>
 
                     {expandedComments[post.id] && <PostComments postId={post.id} />}
