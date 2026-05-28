@@ -9,7 +9,7 @@ import { CreateUserBody } from "@workspace/api-zod";
 
 const router = Router();
 
-router.use(requireAuth, requireAdmin);
+router.use("/admin", requireAuth, requireAdmin);
 
 router.get("/admin/users", async (_req, res) => {
   const users = await listUsers();

@@ -17,7 +17,7 @@ import {
 } from "@workspace/api-zod";
 
 const router = Router();
-router.use(requireAuth, requireAdmin);
+router.use("/admin", requireAuth, requireAdmin);
 
 // Segments
 router.post("/admin/school/segments", validateBody(CreateSegmentBody), async (req, res) => {
