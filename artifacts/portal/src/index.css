@@ -69,45 +69,49 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  /* Deep Teal / Pine Green Theme */
-  --background: 60 20% 98%; /* Warm off-white */
-  --foreground: 180 20% 15%; /* Deep teal-grey text */
-  --border: 60 10% 90%;
-  
-  --card: 0 0% 100%;
-  --card-foreground: 180 20% 15%;
-  --card-border: 60 10% 90%;
+  /* Skool-style neutral palette: near-white background, near-black text, gold accent */
+  --background: 0 0% 99%;
+  --foreground: 0 0% 9%;
+  --border: 0 0% 92%;
 
-  --sidebar: 60 20% 96%;
-  --sidebar-foreground: 180 20% 20%;
-  --sidebar-border: 60 10% 88%;
-  --sidebar-primary: 180 100% 25%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 9%;
+  --card-border: 0 0% 92%;
+
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 0 0% 9%;
+  --sidebar-border: 0 0% 92%;
+  --sidebar-primary: 0 0% 9%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 60 15% 92%;
-  --sidebar-accent-foreground: 180 30% 15%;
-  --sidebar-ring: 180 40% 60%;
+  --sidebar-accent: 0 0% 95%;
+  --sidebar-accent-foreground: 0 0% 9%;
+  --sidebar-ring: 0 0% 70%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 180 20% 15%;
-  --popover-border: 60 10% 90%;
+  --popover-foreground: 0 0% 9%;
+  --popover-border: 0 0% 92%;
 
-  --primary: 180 100% 25%; /* Deep bold teal */
+  --primary: 0 0% 9%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 180 20% 90%; /* Soft teal-tinted grey */
-  --secondary-foreground: 180 30% 20%;
+  --secondary: 0 0% 95%;
+  --secondary-foreground: 0 0% 9%;
 
-  --muted: 60 15% 92%;
-  --muted-foreground: 180 15% 45%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
 
-  --accent: 40 80% 50%; /* Warm gold accent */
-  --accent-foreground: 0 0% 100%;
+  --accent: 42 95% 50%;
+  --accent-foreground: 0 0% 9%;
 
   --destructive: 0 70% 50%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 60 10% 85%;
-  --ring: 180 100% 25%;
+  --input: 0 0% 92%;
+  --ring: 0 0% 9%;
+
+  --brand-gold: 42 95% 50%;
+  --brand-green: 142 71% 45%;
+  --brand-blue: 217 91% 60%;
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-serif: Georgia, serif;

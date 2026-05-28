@@ -1,43 +1,21 @@
 import { useListSegments, useGetMyProgress } from "@workspace/api-client-react";
 import { Link } from "wouter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { BookOpen, ChevronRight, Layers, PlayCircle, FileText, Loader2 } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useListSubsections } from "@workspace/api-client-react";
-import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
-function SegmentAccordion({ segmentId }: { segmentId: number }) {
-  const { data: subsections, isLoading } = useListSubsections(segmentId, { query: { enabled: !!segmentId } });
+const GRADIENTS = [
+  "from-slate-700 via-slate-800 to-slate-900",
+  "from-blue-700 via-blue-800 to-blue-950",
+  "from-emerald-700 via-emerald-800 to-emerald-950",
+  "from-purple-700 via-purple-800 to-purple-950",
+  "from-rose-700 via-rose-800 to-rose-950",
+  "from-amber-700 via-amber-800 to-amber-950",
+  "from-cyan-700 via-cyan-800 to-cyan-950",
+  "from-indigo-700 via-indigo-800 to-indigo-950",
+  "from-orange-700 via-orange-800 to-orange-950",
+];
 
-  if (isLoading) return <div className="p-4 text-center"><Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" /></div>;
-  if (!subsections?.length) return <div className="p-4 text-sm text-muted-foreground">No content in this segment yet.</div>;
-
-  return (
-    <div className="grid gap-2 p-2">
-      {subsections.map(sub => (
-        <Link key={sub.id} href={`/school/subsections/${sub.id}`}>
-          <div className="group flex items-center justify-between p-3 rounded-md hover:bg-muted transition-colors border border-transparent hover:border-border cursor-pointer">
-            <div className="flex items-center gap-3">
-              <div className="bg-background p-2 rounded text-primary">
-                <Layers className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="font-medium text-sm group-hover:text-primary transition-colors">{sub.title}</div>
-                {sub.description && <div className="text-xs text-muted-foreground line-clamp-1">{sub.description}</div>}
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="text-[10px] font-normal">
-                {sub.lessonCount} lessons
-              </Badge>
-              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </div>
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
+function gradient(id: number) {
+  return GRADIENTS[id % GRADIENTS.length]!;
 }
 
 export default function SchoolPage() {
@@ -45,73 +23,98 @@ export default function SchoolPage() {
   const { data: progress, isLoading: progressLoading } = useGetMyProgress();
 
   if (segmentsLoading || progressLoading) {
-    return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-foreground" />
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-8 w-full">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">School</h1>
-        <p className="text-muted-foreground">Master the curriculum at your own pace.</p>
+    <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {segments?.map((segment) => {
+          const segmentProgress = progress?.bySegment.find(
+            (s) => s.segmentId === segment.id,
+          );
+          const percent = Math.round(segmentProgress?.percent || 0);
+
+          return (
+            <Link key={segment.id} href={`/school/segments/${segment.id}`}>
+              <article className="group bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-foreground/20 transition-all cursor-pointer">
+                <div
+                  className={`aspect-[16/9] bg-gradient-to-br ${gradient(segment.id)} relative flex items-center justify-center p-6`}
+                >
+                  <h3 className="text-white font-extrabold text-2xl text-center leading-tight uppercase tracking-tight drop-shadow-md">
+                    {segment.title}
+                  </h3>
+                </div>
+                <div className="p-4 space-y-3">
+                  <h3 className="font-semibold text-foreground text-base leading-snug line-clamp-1">
+                    {segment.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
+                    {segment.subsectionCount} subsections · {segment.lessonCount} lessons
+                  </p>
+                  <ProgressBar percent={percent} />
+                </div>
+              </article>
+            </Link>
+          );
+        })}
       </div>
 
-      {progress && (
-        <Card className="mb-8 border-primary/20 bg-primary/5">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="space-y-1">
-                <h3 className="font-semibold text-lg text-foreground">Your Progress</h3>
-                <p className="text-sm text-muted-foreground">
-                  You've completed {progress.completedLessons} out of {progress.totalLessons} lessons
-                </p>
-              </div>
-              <div className="w-full md:w-1/2 space-y-2">
-                <div className="flex justify-between text-sm font-medium">
-                  <span className="text-primary">{Math.round(progress.overallPercent)}%</span>
-                </div>
-                <Progress value={progress.overallPercent} className="h-2 bg-primary/20" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {segments?.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground bg-card border border-border rounded-xl">
+          <p className="font-medium text-foreground">No courses yet</p>
+          <p className="text-sm mt-1">An admin will add content here soon.</p>
+        </div>
       )}
 
-      <div className="space-y-6">
-        <Accordion type="multiple" className="w-full space-y-4">
-          {segments?.map(segment => {
-            const segmentProgress = progress?.bySegment.find(s => s.segmentId === segment.id);
-            const percent = segmentProgress?.percent || 0;
+      {segments && segments.length > 0 && (
+        <div className="mt-8 flex items-center justify-between text-sm text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <button
+              disabled
+              className="px-3 py-1.5 rounded-md hover:bg-muted disabled:opacity-40"
+            >
+              ‹ Previous
+            </button>
+            <span className="h-8 w-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-xs font-semibold">
+              1
+            </span>
+            <button
+              disabled
+              className="px-3 py-1.5 rounded-md hover:bg-muted disabled:opacity-40"
+            >
+              Next ›
+            </button>
+          </div>
+          <span>1-{segments.length} of {segments.length}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
-            return (
-              <AccordionItem key={segment.id} value={`segment-${segment.id}`} className="border rounded-lg bg-card overflow-hidden data-[state=open]:ring-1 ring-border">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50 transition-colors group">
-                  <div className="flex items-center gap-4 text-left w-full">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                      <BookOpen className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{segment.title}</h3>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-sm text-muted-foreground">
-                          {segment.subsectionCount} subsections • {segment.lessonCount} lessons
-                        </span>
-                        {percent > 0 && (
-                          <div className="flex items-center gap-2 ml-4">
-                            <Progress value={percent} className="w-24 h-1.5 bg-muted-foreground/20" />
-                            <span className="text-[10px] font-medium text-muted-foreground">{Math.round(percent)}%</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="bg-card pt-0 pb-2 px-4 border-t border-border">
-                  <SegmentAccordion segmentId={segment.id} />
-                </AccordionContent>
-              </AccordionItem>
-            );
-          })}
-        </Accordion>
+function ProgressBar({ percent }: { percent: number }) {
+  const complete = percent >= 100;
+  return (
+    <div className="relative h-6 rounded-full bg-muted overflow-hidden">
+      <div
+        className={`absolute inset-y-0 left-0 ${
+          complete ? "bg-emerald-500" : "bg-emerald-500"
+        } transition-all`}
+        style={{ width: `${Math.max(percent, 0)}%` }}
+      />
+      <div className="absolute inset-0 flex items-center justify-start px-3">
+        <span
+          className={`text-xs font-semibold ${
+            percent > 12 ? "text-white" : "text-muted-foreground"
+          }`}
+        >
+          {percent}%
+        </span>
       </div>
     </div>
   );

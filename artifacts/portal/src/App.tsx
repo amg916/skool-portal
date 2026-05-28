@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,8 +12,13 @@ import LoginPage from "@/pages/login";
 import ForceChangePasswordPage from "@/pages/force-change-password";
 import CommunityPage from "@/pages/community";
 import SchoolPage from "@/pages/school";
+import SchoolSegmentPage from "@/pages/school-segment";
 import SchoolSubsectionPage from "@/pages/school-subsection";
 import SchoolLessonPage from "@/pages/school-lesson";
+import MembersPage from "@/pages/members";
+import LeaderboardsPage from "@/pages/leaderboards";
+import CalendarPage from "@/pages/calendar";
+import AboutPage from "@/pages/about";
 
 import AdminDashboard from "@/pages/admin/index";
 import AdminUsers from "@/pages/admin/users";
@@ -26,12 +32,9 @@ const queryClient = new QueryClient();
 
 function RedirectToCommunity() {
   const [, setLocation] = useLocation();
-  // Using useEffect to avoid render phase updates
-  import("react").then(({ useEffect }) => {
-    useEffect(() => {
-      setLocation("/community");
-    }, []);
-  });
+  useEffect(() => {
+    setLocation("/community");
+  }, [setLocation]);
   return null;
 }
 
@@ -44,7 +47,7 @@ function Router() {
           <ForceChangePasswordPage />
         </AuthGuard>
       </Route>
-      
+
       <Route path="/">
         <AuthGuard>
           <RedirectToCommunity />
@@ -67,6 +70,14 @@ function Router() {
         </AuthGuard>
       </Route>
 
+      <Route path="/school/segments/:id">
+        <AuthGuard>
+          <AppLayout>
+            <SchoolSegmentPage />
+          </AppLayout>
+        </AuthGuard>
+      </Route>
+
       <Route path="/school/subsections/:id">
         <AuthGuard>
           <AppLayout>
@@ -79,6 +90,38 @@ function Router() {
         <AuthGuard>
           <AppLayout>
             <SchoolLessonPage />
+          </AppLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/members">
+        <AuthGuard>
+          <AppLayout>
+            <MembersPage />
+          </AppLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/leaderboards">
+        <AuthGuard>
+          <AppLayout>
+            <LeaderboardsPage />
+          </AppLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/calendar">
+        <AuthGuard>
+          <AppLayout>
+            <CalendarPage />
+          </AppLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/about">
+        <AuthGuard>
+          <AppLayout>
+            <AboutPage />
           </AppLayout>
         </AuthGuard>
       </Route>

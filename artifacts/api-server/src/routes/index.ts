@@ -9,6 +9,8 @@ import schoolReadRouter from "./schoolRead.js";
 import schoolAdminRouter from "./schoolAdmin.js";
 import uploadsRouter from "./uploads.js";
 import progressRouter from "./progress.js";
+import membersRouter from "./members.js";
+import leaderboardsRouter from "./leaderboards.js";
 
 const router: IRouter = Router();
 
@@ -22,5 +24,7 @@ router.use(schoolReadRouter);
 router.use(schoolAdminRouter);
 router.use(uploadsRouter);
 router.use(progressRouter);
+router.use(membersRouter);
+router.use(leaderboardsRouter);
 
 export default router;
