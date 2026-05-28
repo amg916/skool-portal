@@ -3,15 +3,14 @@ import { useLogout, useGetMe, getGetMeQueryKey } from "@workspace/api-client-rea
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
-  Search,
   MessageCircle,
   Bell,
   LogOut,
   ChevronsUpDown,
   ShieldAlert,
+  Upload,
 } from "lucide-react";
-import { ReactNode } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ReactNode, useRef } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,9 +18,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const BRAND_NAME = "Portal";
-const BRAND_INITIAL = "P";
+import { UserAvatar } from "@/components/user-avatar";
+import { SearchDropdown } from "@/components/search-dropdown";
+import { useGroup } from "@/lib/group";
+import { useToast } from "@/hooks/use-toast";
 
 const SUB_NAV = [
   { href: "/community", label: "Community" },
@@ -42,6 +42,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { data: user } = useGetMe();
   const logoutMut = useLogout();
   const queryClient = useQueryClient();
+  const { data: group } = useGroup();
+  const { toast } = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const groupName = group?.name ?? "Portal";
+  const groupIconUrl = group?.iconUrl ?? null;
+  const brandInitial = groupName.charAt(0).toUpperCase();
 
   const handleLogout = () => {
     logoutMut.mutate(undefined, {
@@ -52,7 +59,37 @@ export function AppLayout({ children }: { children: ReactNode }) {
     });
   };
 
+  const handleAvatarPick = () => fileRef.current?.click();
+
+  const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append("file", file);
+    try {
+      const res = await fetch("/api/me/avatar", {
+        method: "POST",
+        credentials: "include",
+        body: form,
+      });
+      if (!res.ok) throw new Error(await res.text());
+      queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      toast({ title: "Avatar updated" });
+    } catch (err) {
+      toast({
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : "Try a smaller image.",
+        variant: "destructive",
+      });
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   if (!user) return <>{children}</>;
+
+  const userAvatarUrl = (user as { avatarUrl?: string | null }).avatarUrl ?? null;
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
@@ -61,27 +98,25 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <Link
             href="/community"
             className="flex items-center gap-2 group min-w-0"
-            aria-label={`${BRAND_NAME} home`}
+            aria-label={`${groupName} home`}
           >
-            <div className="h-8 w-8 rounded-md bg-foreground text-background flex items-center justify-center font-bold text-sm shrink-0">
-              {BRAND_INITIAL}
-            </div>
-            <span className="font-semibold text-foreground truncate">
-              {BRAND_NAME}
-            </span>
+            {groupIconUrl ? (
+              <img
+                src={groupIconUrl}
+                alt={groupName}
+                className="h-8 w-8 rounded-md object-cover shrink-0"
+              />
+            ) : (
+              <div className="h-8 w-8 rounded-md bg-foreground text-background flex items-center justify-center font-bold text-sm shrink-0">
+                {brandInitial}
+              </div>
+            )}
+            <span className="font-semibold text-foreground truncate">{groupName}</span>
             <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
           </Link>
 
           <div className="flex-1 max-w-2xl mx-auto hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-              <input
-                type="search"
-                placeholder="Search"
-                aria-label="Search"
-                className="w-full h-10 pl-9 pr-3 rounded-full bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
-              />
-            </div>
+            <SearchDropdown />
           </div>
 
           <div className="flex items-center gap-1 ml-auto">
@@ -101,17 +136,25 @@ export function AppLayout({ children }: { children: ReactNode }) {
             >
               <Bell className="h-5 w-5" aria-hidden="true" />
             </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={handleAvatarFile}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   className="ml-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={`Account menu — ${user.name}`}
                 >
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-foreground text-background text-xs font-semibold">
-                      {user.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    name={user.name}
+                    avatarUrl={userAvatarUrl}
+                    className="h-8 w-8"
+                    fallbackClassName="bg-foreground text-background text-xs"
+                  />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -120,6 +163,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   <div className="text-xs text-muted-foreground">{user.email}</div>
                 </div>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleAvatarPick} className="cursor-pointer">
+                  <Upload className="h-4 w-4 mr-2" /> Upload avatar
+                </DropdownMenuItem>
                 {user.role === "admin" && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin" className="flex items-center cursor-pointer">

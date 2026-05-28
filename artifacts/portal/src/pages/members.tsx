@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { GroupInfoCard } from "@/components/community/GroupInfoCard";
 import { Calendar as CalendarIcon, MessageCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { UserAvatar } from "@/components/user-avatar";
 
 type Member = {
   id: number;
@@ -13,6 +13,7 @@ type Member = {
   role: "admin" | "member";
   handle: string;
   joinedAt: string;
+  avatarUrl?: string | null;
 };
 
 async function fetchMembers(): Promise<Member[]> {
@@ -65,11 +66,11 @@ export default function MembersPage() {
             <div className="bg-card border border-border rounded-xl divide-y divide-border">
               {filtered.map((m) => (
                 <div key={m.id} className="p-5 flex items-start gap-4">
-                  <Avatar className="h-12 w-12 shrink-0">
-                    <AvatarFallback className="bg-muted text-foreground font-semibold">
-                      {m.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    name={m.name}
+                    avatarUrl={m.avatarUrl}
+                    className="h-12 w-12 shrink-0"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="font-semibold text-foreground">{m.name}</span>

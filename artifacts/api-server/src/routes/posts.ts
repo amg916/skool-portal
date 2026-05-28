@@ -13,7 +13,7 @@ router.get("/channels/:channelId/posts", requireAuth, async (req, res) => {
     res.status(400).json({ error: "Invalid channelId" });
     return;
   }
-  const posts = await listPostsByChannel(channelId);
+  const posts = await listPostsByChannel(channelId, req.user!.id);
   res.json(posts);
 });
 

@@ -5,3 +5,6 @@ export * from "./posts";
 export * from "./comments";
 export * from "./school";
 export * from "./progress";
+export * from "./likes";
+export * from "./events";
+export * from "./group_settings";

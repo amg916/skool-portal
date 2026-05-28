@@ -11,6 +11,11 @@ import uploadsRouter from "./uploads.js";
 import progressRouter from "./progress.js";
 import membersRouter from "./members.js";
 import leaderboardsRouter from "./leaderboards.js";
+import likesRouter from "./likes.js";
+import searchRouter from "./search.js";
+import eventsRouter from "./events.js";
+import groupRouter from "./group.js";
+import meRouter from "./me.js";
 
 const router: IRouter = Router();
 
@@ -26,5 +31,10 @@ router.use(uploadsRouter);
 router.use(progressRouter);
 router.use(membersRouter);
 router.use(leaderboardsRouter);
+router.use(likesRouter);
+router.use(searchRouter);
+router.use(eventsRouter);
+router.use(groupRouter);
+router.use(meRouter);
 
 export default router;

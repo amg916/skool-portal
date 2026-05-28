@@ -23,6 +23,7 @@ import AboutPage from "@/pages/about";
 import AdminDashboard from "@/pages/admin/index";
 import AdminUsers from "@/pages/admin/users";
 import AdminChannels from "@/pages/admin/channels";
+import AdminGroupPage from "@/pages/admin/group";
 import AdminSegments from "@/pages/admin/segments";
 import AdminSubsections from "@/pages/admin/subsections";
 import AdminLessons from "@/pages/admin/lessons";
@@ -130,6 +131,14 @@ function Router() {
         <AuthGuard requireAdmin>
           <AppLayout>
             <AdminDashboard />
+          </AppLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/admin/group">
+        <AuthGuard requireAdmin>
+          <AppLayout>
+            <AdminGroupPage />
           </AppLayout>
         </AuthGuard>
       </Route>

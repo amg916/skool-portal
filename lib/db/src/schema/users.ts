@@ -10,6 +10,8 @@ export const usersTable = pgTable("users", {
   role: text("role", { enum: ["admin", "member"] }).notNull().default("member"),
   isActive: boolean("is_active").notNull().default(true),
   forcePasswordChange: boolean("force_password_change").notNull().default(true),
+  avatarUrl: text("avatar_url"),
+  bio: text("bio"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

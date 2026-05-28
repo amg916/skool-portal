@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import {
   DropdownMenu,
@@ -39,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AdminOnlyNotice } from "@/components/community/AdminOnlyNotice";
 import { GroupInfoCard } from "@/components/community/GroupInfoCard";
 import { LeaderboardWidget } from "@/components/community/LeaderboardWidget";
+import { UserAvatar } from "@/components/user-avatar";
 
 const CATEGORY_DOT_COLORS = [
   "bg-blue-500",
@@ -52,6 +52,15 @@ const CATEGORY_DOT_COLORS = [
 
 function dotColor(channelId: number): string {
   return CATEGORY_DOT_COLORS[channelId % CATEGORY_DOT_COLORS.length]!;
+}
+
+async function toggleLike(postId: number): Promise<{ liked: boolean }> {
+  const res = await fetch(`/api/posts/${postId}/likes/toggle`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to toggle like");
+  return res.json();
 }
 
 function PostComments({ postId }: { postId: number }) {
@@ -101,11 +110,12 @@ function PostComments({ postId }: { postId: number }) {
     <div className="border-t border-border mt-4 pt-4 space-y-3">
       {comments?.map((comment) => (
         <div key={comment.id} className="flex gap-3">
-          <Avatar className="h-7 w-7">
-            <AvatarFallback className="text-[10px] bg-muted">
-              {comment.authorName.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            name={comment.authorName}
+            avatarUrl={(comment as { authorAvatarUrl?: string | null }).authorAvatarUrl}
+            className="h-7 w-7"
+            fallbackClassName="text-[10px]"
+          />
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2 flex-wrap">
               <span className="text-sm font-semibold text-foreground">
@@ -162,6 +172,12 @@ function PostComments({ postId }: { postId: number }) {
   );
 }
 
+type ExtraPostFields = {
+  authorAvatarUrl: string | null;
+  likeCount: number;
+  likedByMe: boolean;
+};
+
 export default function CommunityPage() {
   const { channelId } = useParams();
   const [, setLocation] = useLocation();
@@ -185,6 +201,7 @@ export default function CommunityPage() {
   const [newPostContent, setNewPostContent] = useState("");
   const [composerOpen, setComposerOpen] = useState(false);
   const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
+  const [likePending, setLikePending] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (channels && channels.length > 0 && !channelId) {
@@ -208,6 +225,25 @@ export default function CommunityPage() {
     );
   };
 
+  const handleToggleLike = async (postId: number) => {
+    if (likePending[postId]) return;
+    setLikePending((p) => ({ ...p, [postId]: true }));
+    try {
+      await toggleLike(postId);
+      queryClient.invalidateQueries({
+        queryKey: getListPostsByChannelQueryKey(activeChannelId!),
+      });
+    } catch (err) {
+      toast({
+        title: "Couldn't update like",
+        description: err instanceof Error ? err.message : "Try again",
+        variant: "destructive",
+      });
+    } finally {
+      setLikePending((p) => ({ ...p, [postId]: false }));
+    }
+  };
+
   if (channelsLoading) {
     return (
       <div className="p-8 flex justify-center">
@@ -227,11 +263,12 @@ export default function CommunityPage() {
               {composerOpen ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9">
-                      <AvatarFallback className="bg-foreground text-background text-xs font-semibold">
-                        {user!.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar
+                      name={user!.name}
+                      avatarUrl={(user as { avatarUrl?: string | null }).avatarUrl}
+                      className="h-9 w-9"
+                      fallbackClassName="bg-foreground text-background text-xs"
+                    />
                     <span className="text-sm text-muted-foreground">
                       Posting in{" "}
                       <span className="font-medium text-foreground">{activeChannel?.name}</span>
@@ -271,11 +308,12 @@ export default function CommunityPage() {
                   className="flex items-center gap-3 w-full text-left"
                   aria-label="Open post composer"
                 >
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-foreground text-background text-xs font-semibold">
-                      {user!.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    name={user!.name}
+                    avatarUrl={(user as { avatarUrl?: string | null }).avatarUrl}
+                    className="h-9 w-9"
+                    fallbackClassName="bg-foreground text-background text-xs"
+                  />
                   <span className="flex-1 px-4 py-2.5 rounded-full bg-muted text-muted-foreground text-sm hover:bg-muted/70 transition-colors">
                     Write something
                   </span>
@@ -337,159 +375,175 @@ export default function CommunityPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {posts?.map((post) => (
-                <article
-                  key={post.id}
-                  className="bg-card border border-border rounded-xl p-5 shadow-sm hover:border-foreground/20 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <Avatar className="h-10 w-10 shrink-0">
-                      <AvatarFallback className="bg-muted text-foreground text-sm font-semibold">
-                        {post.authorName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="font-semibold text-foreground text-sm">
-                          {post.authorName}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-                          {activeChannel ? (
-                            <>
-                              <span className="mx-1.5">·</span>
-                              <span>{activeChannel.name}</span>
-                            </>
-                          ) : null}
-                        </span>
+              {posts?.map((postRaw) => {
+                const post = postRaw as typeof postRaw & ExtraPostFields;
+                const liked = !!post.likedByMe;
+                const likeCount = post.likeCount ?? 0;
+                return (
+                  <article
+                    key={post.id}
+                    className="bg-card border border-border rounded-xl p-5 shadow-sm hover:border-foreground/20 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <UserAvatar
+                        name={post.authorName}
+                        avatarUrl={post.authorAvatarUrl}
+                        className="h-10 w-10 shrink-0"
+                        fallbackClassName="text-sm"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className="font-semibold text-foreground text-sm">
+                            {post.authorName}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                            {activeChannel ? (
+                              <>
+                                <span className="mx-1.5">·</span>
+                                <span>{activeChannel.name}</span>
+                              </>
+                            ) : null}
+                          </span>
+                        </div>
                       </div>
+
+                      {post.isPinned && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                          <Pin className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span className="font-medium">Pinned</span>
+                        </div>
+                      )}
+
+                      {(user?.role === "admin" || user?.id === post.authorId) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Post actions"
+                              className="h-7 w-7 text-muted-foreground -mr-1"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {user?.role === "admin" &&
+                              (post.isPinned ? (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    unpinPost.mutate(
+                                      { postId: post.id },
+                                      {
+                                        onSuccess: () =>
+                                          queryClient.invalidateQueries({
+                                            queryKey: getListPostsByChannelQueryKey(
+                                              activeChannelId!,
+                                            ),
+                                          }),
+                                      },
+                                    );
+                                  }}
+                                >
+                                  <Pin className="h-4 w-4 mr-2" /> Unpin
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    pinPost.mutate(
+                                      { postId: post.id },
+                                      {
+                                        onSuccess: () =>
+                                          queryClient.invalidateQueries({
+                                            queryKey: getListPostsByChannelQueryKey(
+                                              activeChannelId!,
+                                            ),
+                                          }),
+                                      },
+                                    );
+                                  }}
+                                >
+                                  <Pin className="h-4 w-4 mr-2" /> Pin
+                                </DropdownMenuItem>
+                              ))}
+                            <DropdownMenuItem
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                              onClick={() => {
+                                deletePost.mutate(
+                                  { postId: post.id },
+                                  {
+                                    onSuccess: () => {
+                                      queryClient.invalidateQueries({
+                                        queryKey: getListPostsByChannelQueryKey(activeChannelId!),
+                                      });
+                                      toast({ title: "Post deleted" });
+                                    },
+                                  },
+                                );
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
 
-                    {post.isPinned && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                        <Pin className="h-3.5 w-3.5" aria-hidden="true" />
-                        <span className="font-medium">Pinned</span>
-                      </div>
+                    <div className="mt-3 flex items-start gap-2">
+                      {activeChannelId && (
+                        <span
+                          className={`mt-2 h-2 w-2 rounded-full shrink-0 ${dotColor(activeChannelId)}`}
+                          aria-hidden="true"
+                        />
+                      )}
+                      <h2 className="font-semibold text-foreground text-base leading-snug">
+                        {post.body.split("\n")[0]!.slice(0, 120)}
+                      </h2>
+                    </div>
+
+                    {post.body.includes("\n") && (
+                      <p className="text-sm text-muted-foreground mt-2 line-clamp-3 whitespace-pre-wrap">
+                        {post.body.split("\n").slice(1).join("\n")}
+                      </p>
                     )}
 
-                    {(user?.role === "admin" || user?.id === post.authorId) && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Post actions"
-                            className="h-7 w-7 text-muted-foreground -mr-1"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {user?.role === "admin" &&
-                            (post.isPinned ? (
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  unpinPost.mutate(
-                                    { postId: post.id },
-                                    {
-                                      onSuccess: () =>
-                                        queryClient.invalidateQueries({
-                                          queryKey: getListPostsByChannelQueryKey(
-                                            activeChannelId!,
-                                          ),
-                                        }),
-                                    },
-                                  );
-                                }}
-                              >
-                                <Pin className="h-4 w-4 mr-2" /> Unpin
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  pinPost.mutate(
-                                    { postId: post.id },
-                                    {
-                                      onSuccess: () =>
-                                        queryClient.invalidateQueries({
-                                          queryKey: getListPostsByChannelQueryKey(
-                                            activeChannelId!,
-                                          ),
-                                        }),
-                                    },
-                                  );
-                                }}
-                              >
-                                <Pin className="h-4 w-4 mr-2" /> Pin
-                              </DropdownMenuItem>
-                            ))}
-                          <DropdownMenuItem
-                            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                            onClick={() => {
-                              deletePost.mutate(
-                                { postId: post.id },
-                                {
-                                  onSuccess: () => {
-                                    queryClient.invalidateQueries({
-                                      queryKey: getListPostsByChannelQueryKey(activeChannelId!),
-                                    });
-                                    toast({ title: "Post deleted" });
-                                  },
-                                },
-                              );
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
+                    <div className="mt-4 flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToggleLike(post.id)}
+                        disabled={likePending[post.id]}
+                        aria-pressed={liked}
+                        aria-label={liked ? "Unlike post" : "Like post"}
+                        className={`h-8 px-2 ${
+                          liked
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <ThumbsUp
+                          className={`h-4 w-4 mr-1.5 ${liked ? "fill-foreground" : ""}`}
+                        />
+                        <span className="text-xs font-medium">{likeCount}</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setExpandedComments((p) => ({ ...p, [post.id]: !p[post.id] }))
+                        }
+                        className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                        aria-expanded={!!expandedComments[post.id]}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-1.5" />
+                        <span className="text-xs font-medium">{post.commentCount}</span>
+                      </Button>
+                    </div>
 
-                  <div className="mt-3 flex items-start gap-2">
-                    {activeChannelId && (
-                      <span
-                        className={`mt-2 h-2 w-2 rounded-full shrink-0 ${dotColor(activeChannelId)}`}
-                        aria-hidden="true"
-                      />
-                    )}
-                    <h2 className="font-semibold text-foreground text-base leading-snug">
-                      {post.body.split("\n")[0]!.slice(0, 120)}
-                    </h2>
-                  </div>
-
-                  {post.body.includes("\n") && (
-                    <p className="text-sm text-muted-foreground mt-2 line-clamp-3 whitespace-pre-wrap">
-                      {post.body.split("\n").slice(1).join("\n")}
-                    </p>
-                  )}
-
-                  <div className="mt-4 flex items-center gap-1 text-muted-foreground">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <ThumbsUp className="h-4 w-4 mr-1.5" />
-                      <span className="text-xs font-medium">0</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        setExpandedComments((p) => ({ ...p, [post.id]: !p[post.id] }))
-                      }
-                      className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                      aria-expanded={!!expandedComments[post.id]}
-                    >
-                      <MessageSquare className="h-4 w-4 mr-1.5" />
-                      <span className="text-xs font-medium">{post.commentCount}</span>
-                    </Button>
-                  </div>
-
-                  {expandedComments[post.id] && <PostComments postId={post.id} />}
-                </article>
-              ))}
+                    {expandedComments[post.id] && <PostComments postId={post.id} />}
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>
