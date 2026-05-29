@@ -13,3 +13,4 @@ export * from "./chats";
 export * from "./bookmarks";
 export * from "./reactions";
 export * from "./suggestions";
+export * from "./recordings";

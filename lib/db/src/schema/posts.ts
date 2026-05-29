@@ -12,8 +12,15 @@ export const postsTable = pgTable("posts", {
   isPinned: boolean("is_pinned").notNull().default(false),
   loomUrl: text("loom_url"),
   videoUrl: text("video_url"),
-  videoProvider: text("video_provider", { enum: ["loom", "youtube", "vimeo"] }),
+  videoProvider: text("video_provider", {
+    enum: ["loom", "youtube", "vimeo", "cloudflare-stream"],
+  }),
   videoEmbedId: text("video_embed_id"),
+  /**
+   * Optional FK to recordings table when the post was created via the in-app
+   * "Record a banger" flow. NOT a hard FK (would cycle on cascade w/ users).
+   */
+  recordingId: integer("recording_id"),
   tags: text("tags").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
