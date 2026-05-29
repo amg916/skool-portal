@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useGetMe } from "@workspace/api-client-react";
 import { useGroup, useMemberCount } from "@/lib/group";
+import { InviteButton } from "@/components/community/InviteButton";
 
 function BrandName({ name }: { name: string }) {
   const idx = name.toLowerCase().indexOf("ai");
@@ -68,18 +69,18 @@ export function GroupInfoCard() {
           <Stat label="Online" value="—" />
           <Stat label="Admins" value={counts ? counts.admins.toString() : "—"} />
         </div>
-        {isAdmin ? (
-          <Button
-            className="w-full mt-3 rounded-full bg-foreground text-background hover:bg-foreground/90"
-            asChild
-          >
-            <Link href="/admin/group">Settings</Link>
-          </Button>
-        ) : (
-          <Button className="w-full mt-3 rounded-full bg-foreground text-background hover:bg-foreground/90">
-            Invite a builder
-          </Button>
-        )}
+        <div className="mt-3 space-y-2">
+          <InviteButton />
+          {isAdmin && (
+            <Button
+              variant="outline"
+              className="w-full rounded-full"
+              asChild
+            >
+              <Link href="/admin/group">Settings</Link>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

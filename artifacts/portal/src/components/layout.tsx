@@ -152,7 +152,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
               size="icon"
               aria-label="Notifications"
               className="text-muted-foreground hover:text-foreground"
-              title="Notifications coming soon"
+              onClick={() =>
+                toast({
+                  title: "Notifications coming soon",
+                  description: "We'll surface DMs, mentions, and Q&A reminders here.",
+                })
+              }
             >
               <Bell className="h-5 w-5" aria-hidden="true" />
             </Button>

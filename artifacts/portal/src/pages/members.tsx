@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { GroupInfoCard } from "@/components/community/GroupInfoCard";
+import { InviteButton } from "@/components/community/InviteButton";
 import { Calendar as CalendarIcon, MessageCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { UserAvatar } from "@/components/user-avatar";
@@ -53,9 +54,7 @@ export default function MembersPage() {
                 Admins
               </Chip>
             </div>
-            <Button className="bg-foreground text-background hover:bg-foreground/90 rounded-full">
-              Invite a builder
-            </Button>
+            <InviteButton className="bg-foreground text-background hover:bg-foreground/90 rounded-full" />
           </div>
 
           {isLoading ? (
