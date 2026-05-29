@@ -533,6 +533,12 @@ export function RecordButton({
   );
 }
 
+// Active chip uses the brand purple so it stays high-contrast across
+// light/dark themes AND any forced-dark-mode browser extension. The earlier
+// `bg-foreground` / `bg-card` pair both collapsed to the same color under
+// Dark Reader-style inversion, which made all 3 chips look identical (and
+// the modal felt unclickable). Inline hex avoids depending on CSS variables
+// that the user's theme might be overriding.
 function ModeChip({
   active,
   onClick,
@@ -548,12 +554,16 @@ function ModeChip({
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-xs font-semibold transition-colors ${
+      aria-pressed={active}
+      className={`relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-xs font-semibold transition-all ${
         active
-          ? "bg-foreground text-background border-foreground"
-          : "bg-card text-foreground border-border hover:border-foreground/30"
+          ? "bg-[#7C3AED] text-white border-[#7C3AED] shadow-lg shadow-[#7C3AED]/30 ring-2 ring-[#7C3AED]/40 ring-offset-2 ring-offset-card"
+          : "bg-card text-foreground border-border hover:border-[#7C3AED]/50 hover:bg-[#7C3AED]/5"
       }`}
     >
+      {active && (
+        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-white shadow ring-1 ring-[#7C3AED]" />
+      )}
       {icon}
       <span>{label}</span>
     </button>
