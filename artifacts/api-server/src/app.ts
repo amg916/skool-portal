@@ -6,6 +6,7 @@ import path from "path";
 import fs from "fs";
 import { logger } from "./lib/logger.js";
 import router from "./routes/index.js";
+import cfStreamWebhookRouter from "./routes/cfStreamWebhook.js";
 import { generalApiLimit } from "./rateLimits.js";
 import { errorHandler } from "./errors.js";
 
@@ -41,6 +42,11 @@ app.use(
 );
 
 app.use(cookieParser());
+
+// CF Stream webhook handler MUST run before express.json() so the express.raw()
+// inside the route can capture the unmodified body for HMAC verification.
+app.use("/api", cfStreamWebhookRouter);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

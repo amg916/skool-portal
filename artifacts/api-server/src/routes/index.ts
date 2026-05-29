@@ -23,13 +23,8 @@ import reactionsRouter from "./reactions.js";
 import suggestionsRouter from "./suggestions.js";
 import githubReposRouter from "./githubRepos.js";
 import recordingsRouter from "./recordings.js";
-import cfStreamWebhookRouter from "./cfStreamWebhook.js";
 
 const router: IRouter = Router();
-
-// CF Stream webhook MUST be mounted BEFORE any global JSON body parser so the
-// route's own express.raw() can read the unmodified body for HMAC verify.
-router.use(cfStreamWebhookRouter);
 
 router.use(healthRouter);
 router.use(authRouter);
