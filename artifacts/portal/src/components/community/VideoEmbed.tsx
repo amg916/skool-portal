@@ -1,7 +1,7 @@
 import { parseVideoUrl, embedUrl } from "@/lib/video";
 
 export function VideoEmbed({ url, provider, embedId }: { url: string; provider?: string | null; embedId?: string | null }) {
-  let p = provider as "loom" | "youtube" | "vimeo" | undefined | null;
+  let p = provider as "loom" | "youtube" | "vimeo" | "cloudflare-stream" | undefined | null;
   let id = embedId ?? null;
   if (!p || !id) {
     const parsed = parseVideoUrl(url);

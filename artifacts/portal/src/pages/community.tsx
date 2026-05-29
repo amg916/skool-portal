@@ -40,6 +40,8 @@ import { AdminOnlyNotice } from "@/components/community/AdminOnlyNotice";
 import { GroupInfoCard } from "@/components/community/GroupInfoCard";
 import { LeaderboardWidget } from "@/components/community/LeaderboardWidget";
 import { StarterCard } from "@/components/community/StarterCard";
+import { RecordButton } from "@/components/community/RecordButton";
+import { Video as VideoIcon2 } from "lucide-react";
 import "./community.css";
 import { UserAvatar } from "@/components/user-avatar";
 import { VideoEmbed } from "@/components/community/VideoEmbed";
@@ -469,6 +471,20 @@ export default function CommunityPage() {
                       className="pl-9 text-sm"
                     />
                   </div>
+                  <RecordButton
+                    onComplete={(banger) => {
+                      setNewLoomUrl(banger.embedUrl);
+                    }}
+                    trigger={
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-center gap-2 text-sm font-semibold rounded-full border border-dashed border-[var(--b-purple,#7C3AED)] text-[var(--b-purple,#7C3AED)] py-2.5 hover:bg-[var(--b-purple-50,#F2EBFE)] transition-colors"
+                      >
+                        <VideoIcon2 className="h-4 w-4" />
+                        Record a banger
+                      </button>
+                    }
+                  />
                   <Input
                     type="text"
                     placeholder="Tags (comma-separated, e.g. agents, rag, voice)"

@@ -1,4 +1,4 @@
-export type VideoProvider = "loom" | "youtube" | "vimeo";
+export type VideoProvider = "loom" | "youtube" | "vimeo" | "cloudflare-stream";
 
 export type ParsedVideo = {
   provider: VideoProvider;
@@ -9,6 +9,7 @@ export type ParsedVideo = {
 const LOOM_ID_RE = /^[a-f0-9]{32}$/i;
 const YT_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
 const VIMEO_ID_RE = /^[0-9]+$/;
+const CF_STREAM_UID_RE = /^[a-f0-9]{32}$/i;
 
 export function parseVideoUrl(input: string | null | undefined): ParsedVideo | null {
   if (!input) return null;
@@ -49,6 +50,27 @@ export function parseVideoUrl(input: string | null | undefined): ParsedVideo | n
       return { provider: "youtube", embedId: id, canonicalUrl: `https://www.youtube.com/watch?v=${id}` };
   }
 
+  // Cloudflare Stream (record-a-banger output):
+  //   https://customer-xxx.cloudflarestream.com/<32-hex>/iframe
+  //   https://watch.cloudflarestream.com/<32-hex>
+  //   https://videodelivery.net/<32-hex>
+  if (
+    host.endsWith(".cloudflarestream.com") ||
+    host === "watch.cloudflarestream.com" ||
+    host === "iframe.videodelivery.net" ||
+    host === "videodelivery.net"
+  ) {
+    const segments = url.pathname.split("/").filter(Boolean);
+    const id = segments[0] ?? "";
+    if (CF_STREAM_UID_RE.test(id)) {
+      const sub = host.split(".")[0]!;
+      const canonical = host.endsWith(".cloudflarestream.com")
+        ? `https://${sub}.cloudflarestream.com/${id.toLowerCase()}/iframe`
+        : `https://watch.cloudflarestream.com/${id.toLowerCase()}`;
+      return { provider: "cloudflare-stream", embedId: id.toLowerCase(), canonicalUrl: canonical };
+    }
+  }
+
   if (host === "vimeo.com" || host === "player.vimeo.com") {
     const segments = url.pathname.split("/").filter(Boolean);
     const last = segments[segments.length - 1] ?? "";
@@ -59,6 +81,8 @@ export function parseVideoUrl(input: string | null | undefined): ParsedVideo | n
   return null;
 }
 
+const CF_CUSTOMER_SUBDOMAIN = "customer-xu3qlilubd087z7q";
+
 export function embedUrl(provider: VideoProvider, embedId: string): string {
   switch (provider) {
     case "loom":
@@ -67,5 +91,7 @@ export function embedUrl(provider: VideoProvider, embedId: string): string {
       return `https://www.youtube.com/embed/${embedId}`;
     case "vimeo":
       return `https://player.vimeo.com/video/${embedId}`;
+    case "cloudflare-stream":
+      return `https://${CF_CUSTOMER_SUBDOMAIN}.cloudflarestream.com/${embedId}/iframe?preload=metadata`;
   }
 }
