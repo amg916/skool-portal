@@ -90,6 +90,10 @@ export function RecordButton({
   const screenVidElRef = useRef<HTMLVideoElement | null>(null);
   const camVidElRef = useRef<HTMLVideoElement | null>(null);
   const camPreviewRef = useRef<HTMLVideoElement | null>(null);
+  // Large live cam preview rendered at bottom-left of the viewport so you can
+  // see yourself while recording. Mirrors the cam stream — purely visual,
+  // independent of the canvas compositor that bakes the bubble into the file.
+  const liveCamRef = useRef<HTMLVideoElement | null>(null);
 
   const { toast } = useToast();
 
@@ -213,13 +217,21 @@ export function RecordButton({
       }
       composedRef.current = recordStream;
 
-      // Wire the floating-widget cam preview (only for screen+cam where cam
-      // is small and worth showing live; for cam-only the whole widget is cam).
+      // Wire the floating-widget cam thumbnail.
       if (camPreviewRef.current && camStream) {
         camPreviewRef.current.srcObject = camStream;
         camPreviewRef.current.muted = true;
         camPreviewRef.current.play().catch(() => {});
       }
+      // Wire the large live cam bubble at bottom-left of viewport. Bound on
+      // next tick because the portal mounts AFTER setPhase('recording').
+      requestAnimationFrame(() => {
+        if (liveCamRef.current && camStream) {
+          liveCamRef.current.srcObject = camStream;
+          liveCamRef.current.muted = true;
+          liveCamRef.current.play().catch(() => {});
+        }
+      });
 
       // 3. Mint upload URL from backend.
       const r = await fetch("/api/recordings/upload-url", {
@@ -346,7 +358,8 @@ export function RecordButton({
     await camVid.play().catch(() => {});
     camVidElRef.current = camVid;
 
-    // Cam bubble: bottom-left, ~22% of screen width, circular crop, purple ring.
+    // Cam bubble: bottom-left, ~32% of screen width (big like Loom),
+    // circular crop, purple ring.
     function draw() {
       try {
         ctx.fillStyle = "#000";
@@ -355,9 +368,9 @@ export function RecordButton({
           ctx.drawImage(screenVid, 0, 0, w, h);
         }
         if (camVid.readyState >= 2 && camVid.videoWidth > 0) {
-          const camDiameter = Math.round(w * 0.22);
-          const cx = 32 + camDiameter / 2;
-          const cy = h - camDiameter / 2 - 32;
+          const camDiameter = Math.round(w * 0.32);
+          const cx = 40 + camDiameter / 2;
+          const cy = h - camDiameter / 2 - 40;
           ctx.save();
           ctx.beginPath();
           ctx.arc(cx, cy, camDiameter / 2, 0, Math.PI * 2);
@@ -753,6 +766,35 @@ export function RecordButton({
                   </button>
                 </div>
               )}
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* Large live cam bubble — bottom-left of viewport so you can see
+          yourself while recording. Only rendered when a cam stream exists
+          (screen+cam or cam-only modes). pointer-events:none so it never
+          blocks clicks underneath. */}
+      {isFloating &&
+        camStreamRef.current &&
+        createPortal(
+          <div
+            className="fixed bottom-6 left-6 z-[99] pointer-events-none"
+            aria-hidden="true"
+          >
+            <div className="relative h-[220px] w-[220px] rounded-full overflow-hidden border-4 border-[#7C3AED] shadow-2xl shadow-[#7C3AED]/40 bg-black ring-2 ring-white/20">
+              <video
+                ref={liveCamRef}
+                autoPlay
+                playsInline
+                muted
+                // Mirror the cam horizontally so it feels like a mirror,
+                // matching how every video conferencing tool shows your own
+                // feed. (CF Stream will record the un-mirrored canvas — only
+                // the live preview is flipped.)
+                style={{ transform: "scaleX(-1)" }}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
             </div>
           </div>,
           document.body,
