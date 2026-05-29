@@ -1,12 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Camera,
   Mic,
@@ -17,8 +10,34 @@ import {
   Play,
   Loader2,
   Check,
+  X,
+  AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+// -----------------------------------------------------------------------------
+// RecordButton — Loom-style in-app screen+cam recorder.
+//
+// Phases:
+//   idle       → centered modal: source picker
+//   permission → centered modal: spinner while getDisplayMedia / getUserMedia resolves
+//   recording  → small floating widget bottom-right (non-blocking, page interactable)
+//   paused     → same widget, with Resume button
+//   stopping   → modal: "wrapping up"
+//   uploading  → modal: progress bar (CF Stream upload)
+//   encoding   → modal: spinner ("CF is encoding")
+//   ready      → modal: ✓ banger ready (also auto-populates composer videoUrl)
+//   error      → modal: error + try again
+//
+// Key invariants:
+//   - During recording/paused, the page is FULLY interactable — no overlay.
+//   - Stop is reliable: we requestData() to flush before stop(), then defer
+//     stopAllTracks() until inside recorder.onstop.
+//   - uploadUrl lives in a ref so the stop+upload path doesn't depend on
+//     React state being current.
+//   - For screen+cam mode we composite the cam onto a canvas as a Loom-style
+//     bubble, so the bake-in cam is part of the recorded video itself.
+// -----------------------------------------------------------------------------
 
 type SourceMode = "screen" | "cam" | "screen+cam";
 
@@ -55,43 +74,46 @@ export function RecordButton({
   const [elapsed, setElapsed] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errMsg, setErrMsg] = useState<string | null>(null);
-  const [streamUid, setStreamUid] = useState<string | null>(null);
-  const [recordingId, setRecordingId] = useState<number | null>(null);
 
+  // Refs persist across renders — never depend on React state for the
+  // recorder pipeline. State is for the UI only.
   const screenStreamRef = useRef<MediaStream | null>(null);
   const camStreamRef = useRef<MediaStream | null>(null);
   const composedRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const tickRef = useRef<number | null>(null);
-  const previewVideoRef = useRef<HTMLVideoElement | null>(null);
+  const uploadUrlRef = useRef<string | null>(null);
+  const streamUidRef = useRef<string | null>(null);
+  const recordingIdRef = useRef<number | null>(null);
+  const canvasAnimRef = useRef<number | null>(null);
+  const screenVidElRef = useRef<HTMLVideoElement | null>(null);
+  const camVidElRef = useRef<HTMLVideoElement | null>(null);
+  const camPreviewRef = useRef<HTMLVideoElement | null>(null);
+
   const { toast } = useToast();
 
-  // ---------- cleanup on close / unmount ----------
-  useEffect(() => {
-    if (!open) {
-      resetAll();
-    }
-    return () => {
-      stopAllTracks();
-      if (tickRef.current != null) {
-        window.clearInterval(tickRef.current);
-        tickRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  function stopAllTracks() {
-    [screenStreamRef.current, camStreamRef.current, composedRef.current].forEach(
-      (s) => s?.getTracks().forEach((t) => t.stop()),
-    );
+  // ---------------------------------------------------------------------------
+  // Cleanup
+  // ---------------------------------------------------------------------------
+  const stopAllTracks = useCallback(() => {
+    [
+      screenStreamRef.current,
+      camStreamRef.current,
+      composedRef.current,
+    ].forEach((s) => s?.getTracks().forEach((t) => t.stop()));
     screenStreamRef.current = null;
     camStreamRef.current = null;
     composedRef.current = null;
-  }
+    if (canvasAnimRef.current != null) {
+      cancelAnimationFrame(canvasAnimRef.current);
+      canvasAnimRef.current = null;
+    }
+    screenVidElRef.current = null;
+    camVidElRef.current = null;
+  }, []);
 
-  function resetAll() {
+  const resetAll = useCallback(() => {
     stopAllTracks();
     if (recorderRef.current && recorderRef.current.state !== "inactive") {
       try {
@@ -106,65 +128,100 @@ export function RecordButton({
       window.clearInterval(tickRef.current);
       tickRef.current = null;
     }
+    uploadUrlRef.current = null;
+    streamUidRef.current = null;
+    recordingIdRef.current = null;
     setPhase("idle");
     setElapsed(0);
     setUploadProgress(0);
     setErrMsg(null);
-    setStreamUid(null);
-    setRecordingId(null);
+  }, [stopAllTracks]);
+
+  // On modal close (X button or backdrop), reset everything UNLESS we're mid
+  // recording — closing the X during recording should NOT cancel the recording.
+  function tryClose() {
+    if (phase === "recording" || phase === "paused") return; // ignore
+    if (phase === "uploading" || phase === "encoding") return; // don't cancel mid-upload either
+    setOpen(false);
   }
 
-  // ---------- start recording flow ----------
+  useEffect(() => {
+    if (!open) resetAll();
+    return () => {
+      stopAllTracks();
+      if (tickRef.current != null) {
+        window.clearInterval(tickRef.current);
+        tickRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // Escape closes modal (but not during recording).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") tryClose();
+    }
+    if (open) window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, phase]);
+
+  // ---------------------------------------------------------------------------
+  // Start
+  // ---------------------------------------------------------------------------
   async function start() {
     setErrMsg(null);
     setPhase("permission");
 
     try {
-      // 1. Get permission to media sources.
-      let videoStream: MediaStream | null = null;
+      // 1. Acquire media streams.
+      let screenStream: MediaStream | null = null;
       let camStream: MediaStream | null = null;
 
       if (mode === "screen" || mode === "screen+cam") {
-        videoStream = await navigator.mediaDevices.getDisplayMedia({
+        screenStream = await navigator.mediaDevices.getDisplayMedia({
           video: { frameRate: { ideal: 30 } },
-          audio: true,
+          audio: true, // system audio (optional, Chrome/Edge only)
         });
-        screenStreamRef.current = videoStream;
+        screenStreamRef.current = screenStream;
       }
       if (mode === "cam" || mode === "screen+cam") {
         camStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 640 }, height: { ideal: 360 } },
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: true,
         });
         camStreamRef.current = camStream;
       }
 
-      // 2. Pick the canonical stream we'll record from. For screen+cam we
-      //    record the screen track + merge mic audio from cam; the cam video
-      //    is shown as PiP only via the preview <video> element.
-      const recordStream = new MediaStream();
-      if (videoStream) {
-        videoStream.getVideoTracks().forEach((t) => recordStream.addTrack(t));
-        videoStream.getAudioTracks().forEach((t) => recordStream.addTrack(t));
-      } else if (camStream) {
+      // 2. Build the stream that the MediaRecorder will actually record.
+      //    For screen+cam mode we composite the cam onto a canvas (Loom-style
+      //    bubble) so the cam is BAKED INTO the recording, not just preview.
+      let recordStream: MediaStream;
+      if (mode === "screen+cam" && screenStream && camStream) {
+        recordStream = await buildCompositeStream(screenStream, camStream);
+      } else if (mode === "screen" && screenStream) {
+        recordStream = new MediaStream();
+        screenStream.getVideoTracks().forEach((t) => recordStream.addTrack(t));
+        screenStream.getAudioTracks().forEach((t) => recordStream.addTrack(t));
+      } else if (mode === "cam" && camStream) {
+        recordStream = new MediaStream();
         camStream.getVideoTracks().forEach((t) => recordStream.addTrack(t));
-      }
-      if (camStream && mode !== "cam") {
-        // mic audio from cam stream layered on top
         camStream.getAudioTracks().forEach((t) => recordStream.addTrack(t));
-      } else if (camStream && mode === "cam") {
-        camStream.getAudioTracks().forEach((t) => recordStream.addTrack(t));
+      } else {
+        throw new Error("Could not build recording stream");
       }
       composedRef.current = recordStream;
 
-      // Wire preview video
-      if (previewVideoRef.current) {
-        previewVideoRef.current.srcObject = camStream ?? videoStream;
-        previewVideoRef.current.muted = true;
-        previewVideoRef.current.play().catch(() => {});
+      // Wire the floating-widget cam preview (only for screen+cam where cam
+      // is small and worth showing live; for cam-only the whole widget is cam).
+      if (camPreviewRef.current && camStream) {
+        camPreviewRef.current.srcObject = camStream;
+        camPreviewRef.current.muted = true;
+        camPreviewRef.current.play().catch(() => {});
       }
 
-      // 3. Ask the backend for a tus upload URL.
+      // 3. Mint upload URL from backend.
       const r = await fetch("/api/recordings/upload-url", {
         method: "POST",
         credentials: "include",
@@ -174,14 +231,16 @@ export function RecordButton({
       if (!r.ok) {
         throw new Error(`Could not get upload URL: ${r.status}`);
       }
-      const { uploadUrl, streamUid: uid, recordingId: rid } = await r.json();
-      setStreamUid(uid);
-      setRecordingId(rid);
+      const { uploadUrl, streamUid, recordingId } = await r.json();
+      uploadUrlRef.current = uploadUrl;
+      streamUidRef.current = streamUid;
+      recordingIdRef.current = recordingId;
 
-      // 4. Spin up the MediaRecorder.
+      // 4. MediaRecorder.
       const mimeCandidates = [
         "video/webm;codecs=vp9,opus",
         "video/webm;codecs=vp8,opus",
+        "video/webm;codecs=h264,opus",
         "video/webm",
         "video/mp4",
       ];
@@ -189,52 +248,158 @@ export function RecordButton({
         mimeCandidates.find((m) => MediaRecorder.isTypeSupported(m)) || "";
       const recorder = new MediaRecorder(
         recordStream,
-        mime ? { mimeType: mime } : undefined,
+        mime ? { mimeType: mime, videoBitsPerSecond: 4_000_000 } : undefined,
       );
       chunksRef.current = [];
       recorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
       };
       recorder.onstop = async () => {
-        await afterStop(uploadUrl);
+        // Tracks are stopped here, AFTER all data has been collected.
+        stopAllTracks();
+        const url = uploadUrlRef.current;
+        if (!url) {
+          setPhase("error");
+          setErrMsg("Upload URL was lost");
+          return;
+        }
+        await afterStop(url);
       };
-      recorder.start(1000); // collect chunks every 1s
+      recorder.onerror = (e) => {
+        console.error("[record] recorder error", e);
+        setPhase("error");
+        setErrMsg("Recorder failed mid-recording");
+        stopAllTracks();
+      };
+
+      // start with 1s timeslice = ondataavailable fires every 1s, so even if
+      // the user closes the tab mid-recording we have data up to last second.
+      recorder.start(1000);
       recorderRef.current = recorder;
 
-      // Auto-stop if user-shares-system-screen gets revoked by clicking
-      // browser's "Stop sharing" UI.
-      if (videoStream) {
-        videoStream.getVideoTracks().forEach((t) => {
+      // Browser native "Stop sharing" pill → fires `ended` on the screen video
+      // track. Auto-stop our recorder when that happens.
+      if (screenStream) {
+        screenStream.getVideoTracks().forEach((t) => {
           t.addEventListener("ended", () => {
             if (recorderRef.current?.state !== "inactive") stop();
           });
         });
       }
 
-      // 5. Tick timer + auto-stop at MAX_DURATION_SECONDS.
+      // 5. Timer + auto-stop at MAX_DURATION_SECONDS.
       setPhase("recording");
       setElapsed(0);
       tickRef.current = window.setInterval(() => {
-        setElapsed((e) => {
-          const next = e + 1;
-          if (next >= MAX_DURATION_SECONDS) {
-            stop();
-          }
+        setElapsed((prev) => {
+          const next = prev + 1;
+          if (next >= MAX_DURATION_SECONDS) stop();
           return next;
         });
       }, 1000);
     } catch (err) {
       console.error("[record] start failed", err);
+      const name = err instanceof Error ? err.name : "Error";
+      const msg = err instanceof Error ? err.message : String(err);
+      let friendly = msg;
+      if (name === "NotAllowedError") {
+        friendly =
+          "Permission denied. On macOS you may need to grant Chrome screen-recording permission in System Settings → Privacy & Security → Screen Recording, then restart Chrome.";
+      } else if (name === "NotFoundError") {
+        friendly = "Could not find a camera/microphone on this device.";
+      }
       setPhase("error");
-      setErrMsg(
-        err instanceof Error
-          ? `${err.name}: ${err.message}`
-          : "Could not start recording",
-      );
+      setErrMsg(friendly);
       stopAllTracks();
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Build composite stream (screen + cam bubble baked into a canvas stream)
+  // ---------------------------------------------------------------------------
+  async function buildCompositeStream(
+    screenStream: MediaStream,
+    camStream: MediaStream,
+  ): Promise<MediaStream> {
+    const screenTrack = screenStream.getVideoTracks()[0]!;
+    const settings = screenTrack.getSettings();
+    const w = settings.width || 1280;
+    const h = settings.height || 720;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+
+    // Off-DOM video elements feed the canvas.
+    const screenVid = document.createElement("video");
+    screenVid.srcObject = screenStream;
+    screenVid.muted = true;
+    screenVid.playsInline = true;
+    await screenVid.play().catch(() => {});
+    screenVidElRef.current = screenVid;
+
+    const camVid = document.createElement("video");
+    camVid.srcObject = camStream;
+    camVid.muted = true;
+    camVid.playsInline = true;
+    await camVid.play().catch(() => {});
+    camVidElRef.current = camVid;
+
+    // Cam bubble: bottom-left, ~22% of screen width, circular crop, purple ring.
+    function draw() {
+      try {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, w, h);
+        if (screenVid.readyState >= 2) {
+          ctx.drawImage(screenVid, 0, 0, w, h);
+        }
+        if (camVid.readyState >= 2 && camVid.videoWidth > 0) {
+          const camDiameter = Math.round(w * 0.22);
+          const cx = 32 + camDiameter / 2;
+          const cy = h - camDiameter / 2 - 32;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(cx, cy, camDiameter / 2, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+          // cover-fit the cam frame into the circle
+          const camAr = camVid.videoWidth / camVid.videoHeight;
+          let dw = camDiameter;
+          let dh = camDiameter;
+          if (camAr > 1) {
+            dw = camDiameter * camAr;
+          } else {
+            dh = camDiameter / camAr;
+          }
+          ctx.drawImage(camVid, cx - dw / 2, cy - dh / 2, dw, dh);
+          ctx.restore();
+          // purple ring
+          ctx.strokeStyle = "#7C3AED";
+          ctx.lineWidth = Math.max(4, w * 0.004);
+          ctx.beginPath();
+          ctx.arc(cx, cy, camDiameter / 2, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      } catch {
+        /* keep loop alive even on transient errors */
+      }
+      canvasAnimRef.current = requestAnimationFrame(draw);
+    }
+    draw();
+
+    // Capture composited canvas + mix mic audio (and screen audio if present).
+    const canvasStream = (canvas as HTMLCanvasElement).captureStream(30);
+    const finalStream = new MediaStream();
+    canvasStream.getVideoTracks().forEach((t) => finalStream.addTrack(t));
+    camStream.getAudioTracks().forEach((t) => finalStream.addTrack(t));
+    screenStream.getAudioTracks().forEach((t) => finalStream.addTrack(t));
+    return finalStream;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Stop / Pause
+  // ---------------------------------------------------------------------------
   function stop() {
     if (phase !== "recording" && phase !== "paused") return;
     setPhase("stopping");
@@ -242,14 +407,32 @@ export function RecordButton({
       window.clearInterval(tickRef.current);
       tickRef.current = null;
     }
-    if (recorderRef.current && recorderRef.current.state !== "inactive") {
+    const rec = recorderRef.current;
+    if (rec && rec.state !== "inactive") {
       try {
-        recorderRef.current.stop();
+        // Flush any in-flight data BEFORE stop, so the final chunk lands.
+        rec.requestData();
       } catch {
-        /* will trigger onstop */
+        /* ignore — some browsers throw if no data */
+      }
+      try {
+        rec.stop();
+      } catch (e) {
+        console.error("[record] rec.stop() threw", e);
+      }
+    } else {
+      // No active recorder — try afterStop directly if we have URL + chunks.
+      const url = uploadUrlRef.current;
+      if (url && chunksRef.current.length > 0) {
+        stopAllTracks();
+        afterStop(url);
+      } else {
+        setPhase("error");
+        setErrMsg("Could not stop cleanly — please try again.");
       }
     }
-    stopAllTracks();
+    // Note: stopAllTracks() happens INSIDE recorder.onstop (above) so we
+    // don't race the recorder's final data event.
   }
 
   function togglePause() {
@@ -258,17 +441,28 @@ export function RecordButton({
     if (rec.state === "recording") {
       rec.pause();
       setPhase("paused");
+      // Stop the elapsed timer while paused.
+      if (tickRef.current != null) {
+        window.clearInterval(tickRef.current);
+        tickRef.current = null;
+      }
     } else if (rec.state === "paused") {
       rec.resume();
       setPhase("recording");
+      // Restart the elapsed timer.
+      tickRef.current = window.setInterval(() => {
+        setElapsed((prev) => {
+          const next = prev + 1;
+          if (next >= MAX_DURATION_SECONDS) stop();
+          return next;
+        });
+      }, 1000);
     }
   }
 
-  // ---------- after recorder stops: multipart POST upload ----------
-  // CF Stream's direct_upload returns a single-use URL that accepts a
-  // multipart/form-data POST with a `file` field. We use XHR so the browser
-  // surfaces upload progress events (fetch can't stream-upload + report
-  // progress in any current browser without ReadableStream gating).
+  // ---------------------------------------------------------------------------
+  // After stop: upload to CF Stream + poll for ready
+  // ---------------------------------------------------------------------------
   async function afterStop(uploadUrl: string) {
     setPhase("uploading");
     setUploadProgress(0);
@@ -276,6 +470,11 @@ export function RecordButton({
     const blob = new Blob(chunksRef.current, {
       type: chunksRef.current[0]?.type || "video/webm",
     });
+    if (blob.size === 0) {
+      setPhase("error");
+      setErrMsg("Recording was empty — nothing to upload.");
+      return;
+    }
 
     try {
       await new Promise<void>((resolve, reject) => {
@@ -302,7 +501,9 @@ export function RecordButton({
         xhr.onabort = () => reject(new Error("Upload aborted"));
 
         const fd = new FormData();
-        const fileName = blob.type.includes("mp4") ? "banger.mp4" : "banger.webm";
+        const fileName = blob.type.includes("mp4")
+          ? "banger.mp4"
+          : "banger.webm";
         fd.append("file", blob, fileName);
         xhr.send(fd);
       });
@@ -317,16 +518,15 @@ export function RecordButton({
 
     setPhase("encoding");
 
-    // Poll the finalize endpoint until the recording row flips to "ready".
-    const uid = streamUid;
+    const uid = streamUidRef.current;
     if (!uid) return;
     await fetch(`/api/recordings/${uid}/finalize`, {
       method: "POST",
       credentials: "include",
     }).catch(() => {});
 
+    // Poll for ready up to ~2 minutes.
     for (let i = 0; i < 60; i++) {
-      // up to ~2 min
       await new Promise((res) => setTimeout(res, 2000));
       const r = await fetch(`/api/recordings/${uid}`, {
         credentials: "include",
@@ -335,16 +535,17 @@ export function RecordButton({
       const row = await r.json();
       if (row.status === "ready") {
         setPhase("ready");
-        if (recordingId && row.embedUrl) {
+        const rid = recordingIdRef.current;
+        if (rid && row.embedUrl) {
           onComplete?.({
-            recordingId,
+            recordingId: rid,
             streamUid: uid,
             embedUrl: row.embedUrl,
             durationSec: row.durationSec || elapsed,
           });
           toast({
             title: "Banger ready",
-            description: "Drop it into a post.",
+            description: "Dropped into your post composer.",
           });
         }
         return;
@@ -356,189 +557,291 @@ export function RecordButton({
       }
     }
 
-    // Timed out polling — still likely fine, just slow. Surface a soft toast.
+    // Polling timeout — still likely encoding. Soft success.
     setPhase("ready");
     toast({
       title: "Banger uploaded",
       description:
-        "Still encoding on Cloudflare. It'll appear in the feed in a minute.",
+        "Still encoding on Cloudflare. It'll appear in your feed in a minute.",
     });
+    const rid = recordingIdRef.current;
+    if (rid) {
+      onComplete?.({
+        recordingId: rid,
+        streamUid: uid,
+        embedUrl: `https://customer-xu3qlilubd087z7q.cloudflarestream.com/${uid}/iframe?preload=metadata`,
+        durationSec: elapsed,
+      });
+    }
   }
 
-  // ---------- render ----------
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
   const fmt = (sec: number) =>
     `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
   const remain = MAX_DURATION_SECONDS - elapsed;
 
+  const isFloating = phase === "recording" || phase === "paused";
+  const showModal = open && !isFloating;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <div onClick={() => setOpen(true)}>{trigger}</div>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Video className="h-5 w-5 text-[var(--b-purple,#7C3AED)]" />
-            Record a banger
-          </DialogTitle>
-          <DialogDescription>
-            Screen + cam recording, straight from your browser. Max 10 minutes.
-            Nothing leaves your machine until you hit Stop.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <span onClick={() => setOpen(true)}>{trigger}</span>
 
-        {phase === "idle" && (
-          <div className="space-y-3">
-            <div className="text-sm font-semibold text-foreground">Source</div>
-            <div className="grid grid-cols-3 gap-2">
-              <ModeChip
-                active={mode === "screen+cam"}
-                onClick={() => setMode("screen+cam")}
-                icon={<Monitor className="h-4 w-4" />}
-                label="Screen + cam"
-              />
-              <ModeChip
-                active={mode === "screen"}
-                onClick={() => setMode("screen")}
-                icon={<Monitor className="h-4 w-4" />}
-                label="Screen only"
-              />
-              <ModeChip
-                active={mode === "cam"}
-                onClick={() => setMode("cam")}
-                icon={<Camera className="h-4 w-4" />}
-                label="Cam only"
-              />
+      {/* Centered modal (all phases except recording/paused) */}
+      {showModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={tryClose}
+            />
+            {/* Card */}
+            <div className="relative z-10 w-full max-w-[480px] rounded-2xl bg-card border border-border p-5 shadow-2xl">
+              {/* Close X (only visible if closing is allowed) */}
+              {phase !== "uploading" && phase !== "encoding" && (
+                <button
+                  type="button"
+                  onClick={tryClose}
+                  aria-label="Close"
+                  className="absolute top-3 right-3 h-7 w-7 rounded-full grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+
+              {/* Title + description shown in idle/permission only */}
+              {(phase === "idle" || phase === "permission") && (
+                <div className="mb-4 pr-8">
+                  <div className="flex items-center gap-2 font-semibold text-foreground">
+                    <Video className="h-5 w-5 text-[#7C3AED]" />
+                    Record a banger
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    Screen + cam, straight from your browser. Max 10 minutes.
+                    When you hit Stop the modal shrinks to a tiny widget so you
+                    can keep working.
+                  </p>
+                </div>
+              )}
+
+              {/* IDLE — source picker */}
+              {phase === "idle" && (
+                <div className="space-y-3">
+                  <div className="text-sm font-semibold text-foreground">
+                    Source
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <ModeChip
+                      active={mode === "screen+cam"}
+                      onClick={() => setMode("screen+cam")}
+                      icon={<Monitor className="h-4 w-4" />}
+                      label="Screen + cam"
+                    />
+                    <ModeChip
+                      active={mode === "screen"}
+                      onClick={() => setMode("screen")}
+                      icon={<Monitor className="h-4 w-4" />}
+                      label="Screen only"
+                    />
+                    <ModeChip
+                      active={mode === "cam"}
+                      onClick={() => setMode("cam")}
+                      icon={<Camera className="h-4 w-4" />}
+                      label="Cam only"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Mic className="h-3.5 w-3.5" /> Mic audio captured from your
+                    default device.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={start}
+                    className="w-full rounded-full bg-[#7C3AED] text-white text-sm font-semibold py-2.5 hover:bg-[#6d2fd1] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Video className="h-4 w-4" />
+                    Start recording
+                  </button>
+                </div>
+              )}
+
+              {/* PERMISSION — spinner */}
+              {phase === "permission" && (
+                <div className="py-6 text-center">
+                  <Loader2 className="h-7 w-7 animate-spin mx-auto text-[#7C3AED]" />
+                  <div className="text-sm font-semibold text-foreground mt-3">
+                    Pick what to share…
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your browser is asking which screen/window/tab to capture.
+                  </p>
+                </div>
+              )}
+
+              {/* STOPPING / UPLOADING / ENCODING — progress */}
+              {(phase === "stopping" ||
+                phase === "uploading" ||
+                phase === "encoding") && (
+                <div className="space-y-3 text-center py-4">
+                  <Loader2 className="h-7 w-7 animate-spin mx-auto text-[#7C3AED]" />
+                  <div className="text-sm font-semibold text-foreground">
+                    {phase === "stopping"
+                      ? "Wrapping up the recording…"
+                      : phase === "uploading"
+                        ? `Uploading to Cloudflare · ${uploadProgress}%`
+                        : "Encoding · this takes ~30 seconds"}
+                  </div>
+                  {phase === "uploading" && (
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#7C3AED] transition-all"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* READY */}
+              {phase === "ready" && (
+                <div className="space-y-3 text-center py-4">
+                  <div className="h-10 w-10 mx-auto rounded-full bg-emerald-500 text-white grid place-items-center">
+                    <Check className="h-5 w-5" />
+                  </div>
+                  <div className="text-sm font-semibold text-foreground">
+                    Banger ready
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Embedded into your post composer. Hit Post when you're done
+                    writing.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className="w-full rounded-full bg-[#7C3AED] text-white text-sm font-semibold py-2.5 hover:bg-[#6d2fd1] transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+
+              {/* ERROR */}
+              {phase === "error" && (
+                <div className="space-y-3 text-center py-4">
+                  <div className="h-10 w-10 mx-auto rounded-full bg-red-500/15 text-red-500 grid place-items-center">
+                    <AlertCircle className="h-5 w-5" />
+                  </div>
+                  <div className="text-sm font-semibold text-red-500">
+                    Recording failed
+                  </div>
+                  <p className="text-xs text-muted-foreground break-words text-left bg-muted/30 rounded-lg p-3">
+                    {errMsg ?? "Unknown error"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={resetAll}
+                    className="w-full rounded-full bg-foreground text-background text-sm font-semibold py-2.5 hover:opacity-90 transition-opacity"
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <Mic className="h-3.5 w-3.5" /> Microphone audio will be captured
-              from your default device.
-            </p>
-            <Button
-              className="w-full rounded-full bg-foreground text-background hover:bg-foreground/90"
-              onClick={start}
-            >
-              <Video className="h-4 w-4 mr-2" />
-              Start recording
-            </Button>
-          </div>
+          </div>,
+          document.body,
         )}
 
-        {(phase === "recording" ||
-          phase === "paused" ||
-          phase === "permission") && (
-          <div className="space-y-3">
-            <div className="aspect-video rounded-xl bg-black overflow-hidden relative">
-              <video
-                ref={previewVideoRef}
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-3 left-3 flex items-center gap-2">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    phase === "recording" ? "bg-red-500 animate-pulse" : "bg-zinc-400"
-                  }`}
-                />
-                <span className="text-xs font-bold text-white bg-black/60 px-2 py-0.5 rounded">
-                  {fmt(elapsed)} · {fmt(remain)} left
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 rounded-full"
-                onClick={togglePause}
-                disabled={phase === "permission"}
-              >
-                {phase === "paused" ? (
-                  <>
-                    <Play className="h-4 w-4 mr-2" /> Resume
-                  </>
-                ) : (
-                  <>
-                    <Pause className="h-4 w-4 mr-2" /> Pause
-                  </>
-                )}
-              </Button>
-              <Button
-                className="flex-1 rounded-full bg-red-500 text-white hover:bg-red-600"
-                onClick={stop}
-              >
-                <Square className="h-4 w-4 mr-2" /> Stop
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {(phase === "stopping" || phase === "uploading" || phase === "encoding") && (
-          <div className="space-y-3 text-center py-4">
-            <Loader2 className="h-7 w-7 animate-spin mx-auto text-foreground" />
-            <div className="text-sm font-semibold text-foreground">
-              {phase === "stopping"
-                ? "Wrapping up the recording..."
-                : phase === "uploading"
-                  ? `Uploading to Cloudflare · ${uploadProgress}%`
-                  : "Encoding · this takes ~30 seconds"}
-            </div>
-            {phase === "uploading" && (
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-foreground transition-all"
-                  style={{ width: `${uploadProgress}%` }}
+      {/* Floating widget — recording / paused. NO backdrop. Page interactable. */}
+      {isFloating &&
+        createPortal(
+          <div
+            className="fixed bottom-4 right-4 z-[100] bg-card border-2 border-[#7C3AED] rounded-2xl shadow-2xl shadow-[#7C3AED]/30 p-2.5 flex items-center gap-3 select-none"
+            role="region"
+            aria-label="Recording controls"
+            style={{ minWidth: 320 }}
+          >
+            {/* Cam thumbnail (if cam stream exists — screen+cam or cam-only) */}
+            {camStreamRef.current && (
+              <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-black border border-border flex-shrink-0">
+                <video
+                  ref={camPreviewRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               </div>
             )}
-          </div>
-        )}
 
-        {phase === "ready" && (
-          <div className="space-y-3 text-center py-4">
-            <div className="h-10 w-10 mx-auto rounded-full bg-emerald-500 text-white grid place-items-center">
-              <Check className="h-5 w-5" />
+            {/* Live indicator + timer */}
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    phase === "recording"
+                      ? "bg-red-500 animate-pulse"
+                      : "bg-zinc-400"
+                  }`}
+                />
+                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                  {phase === "recording" ? "Recording" : "Paused"}
+                </span>
+              </div>
+              <div className="text-sm font-bold text-foreground tabular-nums leading-tight">
+                {fmt(elapsed)}
+                <span className="text-xs font-medium text-muted-foreground ml-1">
+                  / {fmt(MAX_DURATION_SECONDS)}
+                </span>
+              </div>
+              <div className="text-[10px] text-muted-foreground truncate">
+                {fmt(remain)} left
+              </div>
             </div>
-            <div className="text-sm font-semibold text-foreground">
-              Banger ready
-            </div>
-            <p className="text-xs text-muted-foreground">
-              It's been added to your post composer. Hit Post when you're ready.
-            </p>
-            <Button
-              className="w-full rounded-full bg-foreground text-background hover:bg-foreground/90"
-              onClick={() => setOpen(false)}
-            >
-              Close
-            </Button>
-          </div>
-        )}
 
-        {phase === "error" && (
-          <div className="space-y-3 text-center py-4">
-            <div className="text-sm font-semibold text-red-600">
-              Recording failed
-            </div>
-            <p className="text-xs text-muted-foreground break-words">
-              {errMsg ?? "Unknown error"}
-            </p>
-            <Button
-              variant="outline"
-              className="w-full rounded-full"
-              onClick={resetAll}
+            {/* Pause / Resume */}
+            <button
+              type="button"
+              onClick={togglePause}
+              aria-label={phase === "paused" ? "Resume recording" : "Pause recording"}
+              title={phase === "paused" ? "Resume" : "Pause"}
+              className="h-9 w-9 rounded-full bg-muted hover:bg-muted/70 grid place-items-center text-foreground flex-shrink-0"
             >
-              Try again
-            </Button>
-          </div>
+              {phase === "paused" ? (
+                <Play className="h-4 w-4" />
+              ) : (
+                <Pause className="h-4 w-4" />
+              )}
+            </button>
+
+            {/* Stop */}
+            <button
+              type="button"
+              onClick={stop}
+              aria-label="Stop recording"
+              title="Stop & save"
+              className="h-9 px-3 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs font-semibold flex items-center gap-1.5 flex-shrink-0"
+            >
+              <Square className="h-3.5 w-3.5 fill-white" />
+              Stop
+            </button>
+          </div>,
+          document.body,
         )}
-      </DialogContent>
-    </Dialog>
+    </>
   );
 }
 
-// Active chip uses the brand purple so it stays high-contrast across
-// light/dark themes AND any forced-dark-mode browser extension. The earlier
-// `bg-foreground` / `bg-card` pair both collapsed to the same color under
-// Dark Reader-style inversion, which made all 3 chips look identical (and
-// the modal felt unclickable). Inline hex avoids depending on CSS variables
-// that the user's theme might be overriding.
+// -----------------------------------------------------------------------------
+// ModeChip — active state uses inline brand purple so forced-dark-mode browser
+// extensions can't collapse it to the same color as inactive chips.
+// -----------------------------------------------------------------------------
 function ModeChip({
   active,
   onClick,
