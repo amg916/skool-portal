@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Loader2, Bookmark, MessageSquare, ThumbsUp } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { VideoEmbed } from "@/components/community/VideoEmbed";
+import { TranscriptPanel } from "@/components/community/TranscriptPanel";
 import { formatDistanceToNow } from "date-fns";
 
 type Bookmark = {
@@ -85,11 +86,16 @@ export default function SavedPage() {
                   </p>
                 )}
                 {videoUrl && (
-                  <VideoEmbed
-                    url={videoUrl}
-                    provider={p.videoProvider}
-                    embedId={p.videoEmbedId}
-                  />
+                  <>
+                    <VideoEmbed
+                      url={videoUrl}
+                      provider={p.videoProvider}
+                      embedId={p.videoEmbedId}
+                    />
+                    {p.videoProvider === "cloudflare-stream" && p.videoEmbedId && (
+                      <TranscriptPanel streamUid={p.videoEmbedId} />
+                    )}
+                  </>
                 )}
                 {p.tags && p.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-3">

@@ -45,6 +45,7 @@ import { Video as VideoIcon2 } from "lucide-react";
 import "./community.css";
 import { UserAvatar } from "@/components/user-avatar";
 import { VideoEmbed } from "@/components/community/VideoEmbed";
+import { TranscriptPanel } from "@/components/community/TranscriptPanel";
 import { UpcomingEventBanner } from "@/components/community/UpcomingEventBanner";
 import { RecentCommenters } from "@/components/community/RecentCommenters";
 import { parseVideoUrl } from "@/lib/video";
@@ -731,6 +732,10 @@ export default function CommunityPage() {
                           provider={post.videoProvider}
                           embedId={post.videoEmbedId}
                         />
+                        {post.videoProvider === "cloudflare-stream" &&
+                          post.videoEmbedId && (
+                            <TranscriptPanel streamUid={post.videoEmbedId} />
+                          )}
                       </div>
                     )}
 

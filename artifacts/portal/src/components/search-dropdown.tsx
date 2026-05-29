@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MessageSquare, User as UserIcon, BookOpen } from "lucide-react";
+import {
+  Search,
+  MessageSquare,
+  User as UserIcon,
+  BookOpen,
+  Video as VideoIcon,
+} from "lucide-react";
 import { Link } from "wouter";
 import { UserAvatar } from "@/components/user-avatar";
 
@@ -12,6 +18,7 @@ type SearchResults = {
     body: string;
     snippet: string;
     authorName: string | null;
+    transcriptMatch?: boolean;
   }>;
   members: Array<{
     id: number;
@@ -96,9 +103,21 @@ export function SearchDropdown() {
                       onClick={() => setOpen(false)}
                     >
                       <ResultRow
-                        icon={<MessageSquare className="h-4 w-4" />}
-                        title={p.snippet}
-                        sub={`${p.authorName ?? "Unknown"} · ${p.channelName ?? ""}`}
+                        icon={
+                          p.transcriptMatch ? (
+                            <VideoIcon className="h-4 w-4" />
+                          ) : (
+                            <MessageSquare className="h-4 w-4" />
+                          )
+                        }
+                        title={
+                          p.transcriptMatch
+                            ? `🎙 ${p.snippet}`
+                            : p.snippet
+                        }
+                        sub={`${p.authorName ?? "Unknown"} · ${p.channelName ?? ""}${
+                          p.transcriptMatch ? " · transcript" : ""
+                        }`}
                       />
                     </Link>
                   ))}
