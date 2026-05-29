@@ -14,12 +14,13 @@ const router: IRouter = Router();
 /**
  * POST /api/recordings/upload-url
  *
- * Returns a tus direct-upload URL for the browser to push WebM chunks to.
+ * Returns a CF Stream direct-creator-upload URL the browser will POST the
+ * recorded blob to (single multipart/form-data POST with a `file` field).
  * Also creates a recordings row in `pending` status so we can correlate.
  *
  * Body: { maxDurationSeconds?: number }
  *
- * Response: { uploadUrl, streamUid, recordingId }
+ * Response: { uploadUrl, streamUid, recordingId, embedUrl }
  */
 router.post("/recordings/upload-url", requireAuth, async (req, res) => {
   const userId = req.user!.id;
@@ -66,8 +67,8 @@ router.post("/recordings/upload-url", requireAuth, async (req, res) => {
 /**
  * POST /api/recordings/:streamUid/finalize
  *
- * Client calls this after the tus upload completes. We poll CF Stream once
- * to update the row (the webhook will fire later with the final ready state).
+ * Client calls this after the upload completes. We poll CF Stream once to
+ * update the row (the webhook will fire later with the final ready state).
  */
 router.post("/recordings/:streamUid/finalize", requireAuth, async (req, res) => {
   const uid = String(req.params.streamUid || "");

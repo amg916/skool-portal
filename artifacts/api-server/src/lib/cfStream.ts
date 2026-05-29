@@ -32,11 +32,17 @@ function cfHeaders(): Record<string, string> {
 }
 
 /**
- * Mint a one-time tus upload URL for direct browser → CF Stream uploading.
- * Returns the upload URL the client will POST to and the stream UID.
+ * Mint a one-time direct-creator-upload URL via the SIMPLE (non-tus) endpoint.
  *
- * The tus protocol response embeds the stream UID in the Location header
- * (final path segment). We surface it for the client + DB row.
+ * POST /accounts/{acct}/stream/direct_upload
+ * Body: { maxDurationSeconds, creator?, expiry?, ... }
+ * Returns: { uploadURL, uid }
+ *
+ * The client can PUT the file as multipart/form-data to uploadURL. CF Stream
+ * accepts a single PUT (full file at once); it does NOT accept tus PATCHes
+ * on this URL. For chunked resumable uploads we'd use the ?direct_user=true
+ * tus endpoint, but that requires knowing the file size up front — which
+ * MediaRecorder can't tell us until recording stops.
  *
  * Spec: https://developers.cloudflare.com/stream/uploading-videos/direct-creator-uploads/
  */
@@ -46,27 +52,18 @@ export async function createDirectUpload(opts: {
   creatorId?: string;
 }): Promise<{ uploadUrl: string; uid: string }> {
   const accountId = cfStreamAccountId();
+  const body: Record<string, unknown> = {
+    maxDurationSeconds: opts.maxDurationSeconds,
+  };
+  if (opts.creatorId) body["creator"] = opts.creatorId;
+  if (opts.meta) body["meta"] = opts.meta;
+
   const res = await fetch(
-    `${CF_BASE}/accounts/${accountId}/stream?direct_user=true`,
+    `${CF_BASE}/accounts/${accountId}/stream/direct_upload`,
     {
       method: "POST",
-      headers: {
-        ...cfHeaders(),
-        // tus-resumable upload requires these headers on the create call:
-        "Tus-Resumable": "1.0.0",
-        "Upload-Length": "0",
-        "Upload-Metadata": [
-          opts.maxDurationSeconds
-            ? `maxDurationSeconds ${btoa(String(opts.maxDurationSeconds))}`
-            : "",
-          opts.creatorId ? `creator ${btoa(opts.creatorId)}` : "",
-          ...Object.entries(opts.meta ?? {}).map(
-            ([k, v]) => `${k} ${btoa(v)}`,
-          ),
-        ]
-          .filter(Boolean)
-          .join(","),
-      },
+      headers: cfHeaders(),
+      body: JSON.stringify(body),
     },
   );
 
@@ -75,14 +72,17 @@ export async function createDirectUpload(opts: {
     throw new Error(`CF Stream direct-upload create failed: ${res.status} ${text}`);
   }
 
-  const location = res.headers.get("Location");
-  const streamId = res.headers.get("stream-media-id");
-  if (!location || !streamId) {
+  const j = (await res.json()) as {
+    result?: { uploadURL?: string; uid?: string };
+    success?: boolean;
+    errors?: Array<{ message: string }>;
+  };
+  if (!j.success || !j.result?.uploadURL || !j.result.uid) {
     throw new Error(
-      `CF Stream direct-upload missing Location or stream-media-id header`,
+      `CF Stream direct-upload bad response: ${JSON.stringify(j.errors ?? j)}`,
     );
   }
-  return { uploadUrl: location, uid: streamId };
+  return { uploadUrl: j.result.uploadURL, uid: j.result.uid };
 }
 
 /**

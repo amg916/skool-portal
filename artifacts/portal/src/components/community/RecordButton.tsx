@@ -18,7 +18,6 @@ import {
   Loader2,
   Check,
 } from "lucide-react";
-import * as tus from "tus-js-client";
 import { useToast } from "@/hooks/use-toast";
 
 type SourceMode = "screen" | "cam" | "screen+cam";
@@ -265,7 +264,11 @@ export function RecordButton({
     }
   }
 
-  // ---------- after recorder stops: tus upload ----------
+  // ---------- after recorder stops: multipart POST upload ----------
+  // CF Stream's direct_upload returns a single-use URL that accepts a
+  // multipart/form-data POST with a `file` field. We use XHR so the browser
+  // surfaces upload progress events (fetch can't stream-upload + report
+  // progress in any current browser without ReadableStream gating).
   async function afterStop(uploadUrl: string) {
     setPhase("uploading");
     setUploadProgress(0);
@@ -274,30 +277,43 @@ export function RecordButton({
       type: chunksRef.current[0]?.type || "video/webm",
     });
 
-    await new Promise<void>((resolve, reject) => {
-      const upload = new tus.Upload(blob, {
-        endpoint: uploadUrl,
-        uploadUrl, // CF gives us a one-time URL; PATCH directly
-        retryDelays: [0, 3000, 8000, 15000],
-        chunkSize: 5 * 1024 * 1024,
-        metadata: { filename: "banger.webm", filetype: blob.type },
-        onError(err) {
-          reject(err);
-        },
-        onProgress(bytesSent, bytesTotal) {
-          setUploadProgress(Math.round((bytesSent / bytesTotal) * 100));
-        },
-        onSuccess() {
-          resolve();
-        },
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", uploadUrl);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setUploadProgress(100);
+            resolve();
+          } else {
+            reject(
+              new Error(
+                `Upload failed: HTTP ${xhr.status} ${xhr.responseText?.slice(0, 200) || ""}`,
+              ),
+            );
+          }
+        };
+        xhr.onerror = () => reject(new Error("Upload network error"));
+        xhr.onabort = () => reject(new Error("Upload aborted"));
+
+        const fd = new FormData();
+        const fileName = blob.type.includes("mp4") ? "banger.mp4" : "banger.webm";
+        fd.append("file", blob, fileName);
+        xhr.send(fd);
       });
-      upload.start();
-    }).catch((err) => {
+    } catch (err) {
       console.error("[record] upload failed", err);
-      setErrMsg(`Upload failed: ${err?.message || err}`);
+      setErrMsg(
+        `Upload failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
       setPhase("error");
-      throw err;
-    });
+      return;
+    }
 
     setPhase("encoding");
 
