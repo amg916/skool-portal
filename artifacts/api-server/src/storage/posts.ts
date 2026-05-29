@@ -37,7 +37,7 @@ export type PostWithMeta = {
 
 export type CreatePostExtras = {
   videoUrl: string | null;
-  videoProvider: "loom" | "youtube" | "vimeo" | null;
+  videoProvider: "loom" | "youtube" | "vimeo" | "cloudflare-stream" | null;
   videoEmbedId: string | null;
   tags: string[];
 };

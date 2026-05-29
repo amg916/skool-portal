@@ -1,4 +1,6 @@
-export type VideoProvider = "loom" | "youtube" | "vimeo";
+export type VideoProvider = "loom" | "youtube" | "vimeo" | "cloudflare-stream";
+
+const CF_STREAM_UID_RE = /^[a-f0-9]{32}$/i;
 
 export type ParsedVideo = {
   provider: VideoProvider;
@@ -50,6 +52,31 @@ export function parseVideoUrl(input: string | null | undefined): ParsedVideo | n
     const id = url.pathname.slice(1).split("/")[0] ?? "";
     if (YT_ID_RE.test(id)) {
       return { provider: "youtube", embedId: id, canonicalUrl: `https://www.youtube.com/watch?v=${id}` };
+    }
+  }
+
+  // Cloudflare Stream:
+  //   https://customer-xxx.cloudflarestream.com/<32-hex-uid>/iframe
+  //   https://customer-xxx.cloudflarestream.com/<32-hex-uid>/watch
+  //   https://watch.cloudflarestream.com/<32-hex-uid>
+  if (
+    host.endsWith(".cloudflarestream.com") ||
+    host === "watch.cloudflarestream.com" ||
+    host === "iframe.videodelivery.net" ||
+    host === "videodelivery.net"
+  ) {
+    const segments = url.pathname.split("/").filter(Boolean);
+    const id = segments[0] ?? "";
+    if (CF_STREAM_UID_RE.test(id)) {
+      const sub = host.split(".")[0]!;
+      const canonical = host.endsWith(".cloudflarestream.com")
+        ? `https://${sub}.cloudflarestream.com/${id.toLowerCase()}/iframe`
+        : `https://watch.cloudflarestream.com/${id.toLowerCase()}`;
+      return {
+        provider: "cloudflare-stream",
+        embedId: id.toLowerCase(),
+        canonicalUrl: canonical,
+      };
     }
   }
 

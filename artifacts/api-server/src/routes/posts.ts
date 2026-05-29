@@ -41,13 +41,20 @@ router.post("/channels/:channelId/posts", requireAuth, async (req, res) => {
   const rawVideoUrl = req.body?.videoUrl ?? rawLoomUrl;
   const rawTags = req.body?.tags;
   let videoUrl: string | null = null;
-  let videoProvider: "loom" | "youtube" | "vimeo" | null = null;
+  let videoProvider:
+    | "loom"
+    | "youtube"
+    | "vimeo"
+    | "cloudflare-stream"
+    | null = null;
   let videoEmbedId: string | null = null;
   let loomUrl: string | null = null;
   if (typeof rawVideoUrl === "string" && rawVideoUrl.trim()) {
     const parsed = parseVideoUrl(rawVideoUrl);
     if (!parsed) {
-      res.status(400).json({ error: "Video link not recognized. Use Loom, YouTube or Vimeo." });
+      res.status(400).json({
+        error: "Video link not recognized. Use Loom, YouTube, Vimeo, or record a banger.",
+      });
       return;
     }
     videoUrl = parsed.canonicalUrl;
