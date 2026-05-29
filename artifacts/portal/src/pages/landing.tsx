@@ -4,6 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useGetMe } from "@workspace/api-client-react";
 import "./landing.css";
 
+const REAL_BANGER = {
+  loomUrl: "https://www.loom.com/share/4cee42f318cf4938ba2187690890f436",
+  thumbUrl:
+    "https://cdn.loom.com/sessions/thumbnails/4cee42f318cf4938ba2187690890f436-bece7043c5f628a4.gif",
+  runtime: "5 min",
+  title: "A short, follow-along AI walkthrough",
+  byline: "From the Baingers welcome banger",
+};
+
 type ProvidersResponse = { providers: Array<"google" | "facebook" | "github"> };
 
 async function fetchProviders(): Promise<ProvidersResponse> {
@@ -162,13 +171,27 @@ export default function LandingPage() {
                 <i /> <i /> <i />
                 <span className="mockup-url">baingers.com/feed</span>
               </div>
-              <div className="sample-thumb">
-                <span className="sample-label">Sample banger</span>
+              <a
+                className="real-thumb"
+                href={REAL_BANGER.loomUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Watch the welcome banger on Loom"
+              >
+                <img
+                  src={REAL_BANGER.thumbUrl}
+                  alt="Baingers welcome banger preview"
+                  loading="lazy"
+                />
+                <span className="source-tag">
+                  <span className="live-dot" />
+                  Loom · welcome banger
+                </span>
                 <div className="clip-play">
                   <span />
                 </div>
-                <div className="mockup-runtime">8 min</div>
-              </div>
+                <div className="runtime-chip">{REAL_BANGER.runtime}</div>
+              </a>
               <div className="mockup-meta">
                 <span
                   className="mk-avatar"
@@ -177,10 +200,10 @@ export default function LandingPage() {
                   B
                 </span>
                 <div>
-                  <div className="mk-title">
-                    A short, follow-along AI walkthrough
+                  <div className="mk-title">{REAL_BANGER.title}</div>
+                  <div className="mk-by">
+                    Under 10 min · watch it, then try it
                   </div>
-                  <div className="mk-by">Under 10 min · watch it, then try it</div>
                 </div>
               </div>
             </div>
@@ -207,13 +230,27 @@ export default function LandingPage() {
             </div>
             <div className="reveal d1">
               <div className="wb-card">
-                <div className="sample-thumb">
-                  <span className="sample-label">Sample banger</span>
+                <a
+                  className="real-thumb"
+                  href={REAL_BANGER.loomUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Watch the welcome banger on Loom"
+                >
+                  <img
+                    src={REAL_BANGER.thumbUrl}
+                    alt="Baingers welcome banger preview"
+                    loading="lazy"
+                  />
+                  <span className="source-tag">
+                    <span className="live-dot" />
+                    Loom · welcome banger
+                  </span>
                   <div className="clip-play">
                     <span />
                   </div>
-                  <div className="banger-runtime">8 min</div>
-                </div>
+                  <div className="runtime-chip">{REAL_BANGER.runtime}</div>
+                </a>
                 <div className="banger-body">
                   <h3 className="banger-title">
                     Watch a short walkthrough, then make the same thing yourself
