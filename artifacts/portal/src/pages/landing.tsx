@@ -317,112 +317,214 @@ export default function LandingPage() {
           </div>
           <div className="feat-grid">
             <div className="feat-card reveal">
-              <div className="feat-ico ico-blue">
-                <svg viewBox="0 0 24 24">
-                  <rect x="3" y="4" width="18" height="5" rx="1.5" />
-                  <rect x="3" y="12" width="18" height="5" rx="1.5" />
-                  <path d="M3 20h11" />
-                </svg>
+              <div className="mini">
+                <div className="mf-post">
+                  <div className="mf-head">
+                    <span className="mf-av" />
+                    <div>
+                      <div className="mf-name">Sample post</div>
+                      <div className="mf-sub">Member · #agents</div>
+                    </div>
+                  </div>
+                  <div className="mf-thumb" />
+                  <div className="mf-react">
+                    <span>🔥 12</span>
+                    <span>💬 4</span>
+                    <span className="bm">🔖</span>
+                  </div>
+                </div>
               </div>
-              <h3 className="feat-title">Community feed</h3>
-              <p className="feat-desc">
-                Post Loom, YouTube, or Vimeo videos with tags, emoji reactions,
-                and bookmarks.
-              </p>
+              <div className="feat-body">
+                <h3 className="feat-title">Community feed</h3>
+                <p className="feat-desc">
+                  Post Loom, YouTube, or Vimeo videos with tags, emoji reactions,
+                  and bookmarks.
+                </p>
+              </div>
             </div>
+
             <div className="feat-card reveal d1">
-              <div className="feat-ico ico-purple">
-                <svg viewBox="0 0 24 24">
-                  <path d="M3 8l9-4 9 4-9 4-9-4Z" />
-                  <path d="M7 10.5V15c0 1.4 2.7 2.8 5 2.8s5-1.4 5-2.8v-4.5" />
-                  <path d="M21 8v5" />
-                </svg>
+              <div className="mini">
+                <div className="mt">
+                  <div className="mt-node lvl0">
+                    <span className="mt-dot" />
+                    Segment 1
+                  </div>
+                  <div className="mt-node lvl1">
+                    <span className="mt-dot" />
+                    Subsection A
+                  </div>
+                  <div className="mt-node lvl2 active">
+                    <span className="mt-dot" />
+                    Lesson 1
+                    <span className="mt-play" />
+                  </div>
+                </div>
               </div>
-              <h3 className="feat-title">Classroom</h3>
-              <p className="feat-desc">
-                Structured video lessons grouped into segments and subsections
-                you can work through.
-              </p>
+              <div className="feat-body">
+                <h3 className="feat-title">Classroom</h3>
+                <p className="feat-desc">
+                  Structured video lessons grouped into segments and subsections
+                  you can work through.
+                </p>
+              </div>
             </div>
+
             <div className="feat-card reveal d2">
-              <div className="feat-ico ico-orange">
-                <svg viewBox="0 0 24 24">
-                  <path d="M9 18h6" />
-                  <path d="M10 21h4" />
-                  <path d="M12 3a6 6 0 0 0-3.8 10.6c.7.6 1.3 1.4 1.3 2.4h5c0-1 .6-1.8 1.3-2.4A6 6 0 0 0 12 3Z" />
-                </svg>
+              <div className="mini">
+                <div className="ms">
+                  <div className="ms-row up">
+                    <div className="ms-vote">
+                      <span className="ms-chev">▲</span>
+                      <span className="ms-count">1</span>
+                    </div>
+                    <span className="ms-title">
+                      Real-time transcript search
+                    </span>
+                    <span className="ms-pill open">OPEN</span>
+                  </div>
+                  <div className="ms-row">
+                    <div className="ms-vote">
+                      <span className="ms-chev">▲</span>
+                      <span className="ms-count">0</span>
+                    </div>
+                    <span className="ms-title">Dark mode for the feed</span>
+                    <span className="ms-pill planned">PLANNED</span>
+                  </div>
+                </div>
               </div>
-              <h3 className="feat-title">Suggestion board</h3>
-              <p className="feat-desc">
-                Members vote on what should get built or featured next. The
-                community sets the agenda.
-              </p>
+              <div className="feat-body">
+                <h3 className="feat-title">Suggestion board</h3>
+                <p className="feat-desc">
+                  Members vote on what should get built or featured next. The
+                  community sets the agenda.
+                </p>
+              </div>
             </div>
+
             <div className="feat-card reveal d3">
-              <div className="feat-ico ico-green">
-                <svg viewBox="0 0 24 24">
-                  <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" />
-                  <path d="M7 6H4.5a1.5 1.5 0 0 0 0 5H8" />
-                  <path d="M17 6h2.5a1.5 1.5 0 0 1 0 5H16" />
-                  <path d="M9.5 20h5" />
-                  <path d="M12 12v5" />
-                </svg>
+              <div className="mini">
+                <div className="mp">
+                  <div className="mp-col">
+                    <span className="mp-av silver">2</span>
+                    <span className="mp-pts">+8</span>
+                    <span className="mp-bar b2" />
+                  </div>
+                  <div className="mp-col">
+                    <span className="mp-av gold">1</span>
+                    <span className="mp-pts">+12</span>
+                    <span className="mp-bar b1" />
+                  </div>
+                  <div className="mp-col">
+                    <span className="mp-av bronze">3</span>
+                    <span className="mp-pts">+5</span>
+                    <span className="mp-bar b3" />
+                  </div>
+                </div>
               </div>
-              <h3 className="feat-title">Leaderboards</h3>
-              <p className="feat-desc">
-                7-day, 30-day, all-time. Earn points for posts, comments, and "I
-                made this" replies.
-              </p>
+              <div className="feat-body">
+                <h3 className="feat-title">Leaderboards</h3>
+                <p className="feat-desc">
+                  7-day, 30-day, all-time. Earn points for posts, comments, and "I
+                  made this" replies.
+                </p>
+              </div>
             </div>
+
             <div className="feat-card reveal">
-              <div className="feat-ico ico-blue">
-                <svg viewBox="0 0 24 24">
-                  <path d="M6 4h12v16l-6-4-6 4Z" />
-                </svg>
+              <div className="mini">
+                <div className="mbm">
+                  <div className="mbm-stack">
+                    <div className="mbm-card c2" />
+                    <div className="mbm-card c1">
+                      <span className="mbm-thumb" />
+                      <span className="mbm-lines">
+                        <i className="a" />
+                        <i className="b" />
+                      </span>
+                    </div>
+                    <span className="mbm-flag">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M6 3h12v18l-6-4-6 4Z" />
+                      </svg>
+                    </span>
+                  </div>
+                  <span className="mbm-cap">2 saved</span>
+                </div>
               </div>
-              <h3 className="feat-title">Bookmarks</h3>
-              <p className="feat-desc">
-                Pin any post to your Saved page and come back to it whenever
-                you're ready.
-              </p>
+              <div className="feat-body">
+                <h3 className="feat-title">Bookmarks</h3>
+                <p className="feat-desc">
+                  Pin any post to your Saved page and come back to it whenever
+                  you're ready.
+                </p>
+              </div>
             </div>
+
             <div className="feat-card reveal d1">
-              <div className="feat-ico ico-purple">
-                <svg viewBox="0 0 24 24">
-                  <path d="M21 11.5a8 8 0 0 1-11.5 7.2L4 20l1.3-4.5A8 8 0 1 1 21 11.5Z" />
-                </svg>
+              <div className="mini">
+                <div className="mc">
+                  <div className="mc-row in">
+                    <span className="mc-av gray" />
+                    <span className="mc-bub gray">How'd you build that?</span>
+                  </div>
+                  <div className="mc-row out">
+                    <span className="mc-av brand" />
+                    <span className="mc-bub blue">Used this prompt →</span>
+                  </div>
+                </div>
               </div>
-              <h3 className="feat-title">Direct messaging</h3>
-              <p className="feat-desc">
-                Message any member 1-on-1 to ask how they made something or trade
-                techniques.
-              </p>
+              <div className="feat-body">
+                <h3 className="feat-title">Direct messaging</h3>
+                <p className="feat-desc">
+                  Message any member 1-on-1 to ask how they made something or
+                  trade techniques.
+                </p>
+              </div>
             </div>
+
             <div className="feat-card reveal d2">
-              <div className="feat-ico ico-orange">
-                <svg viewBox="0 0 24 24">
-                  <rect x="3" y="5" width="18" height="16" rx="2" />
-                  <path d="M3 10h18M8 3v4M16 3v4" />
-                </svg>
+              <div className="mini">
+                <div className="mcal">
+                  <div className="mcal-week">
+                    <span>M</span>
+                    <span>T</span>
+                    <span className="on">W</span>
+                    <span>T</span>
+                    <span>F</span>
+                  </div>
+                  <div className="mcal-grid">
+                    <i /><i /><i /><i /><i />
+                    <i /><i /><i className="on" /><i /><i />
+                    <i /><i /><i /><i /><i />
+                  </div>
+                  <span className="mcal-tag">📞 Q&amp;A · Wed 5pm</span>
+                </div>
               </div>
-              <h3 className="feat-title">Calendar</h3>
-              <p className="feat-desc">
-                A weekly Q&amp;A call plus community events, all on a shared
-                schedule.
-              </p>
+              <div className="feat-body">
+                <h3 className="feat-title">Calendar</h3>
+                <p className="feat-desc">
+                  A weekly Q&amp;A call plus community events, all on a shared
+                  schedule.
+                </p>
+              </div>
             </div>
+
             <div className="feat-card reveal d3">
-              <div className="feat-ico ico-green">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
-                </svg>
+              <div className="mini">
+                <div className="mpf">
+                  <span className="mpf-av">M</span>
+                  <span className="mpf-name">Member</span>
+                  <span className="mpf-chip">🔥 active</span>
+                </div>
               </div>
-              <h3 className="feat-title">Member profiles</h3>
-              <p className="feat-desc">
-                Profiles with avatars so you can see who's who and what they've
-                made.
-              </p>
+              <div className="feat-body">
+                <h3 className="feat-title">Member profiles</h3>
+                <p className="feat-desc">
+                  Profiles with avatars so you can see who's who and what they've
+                  made.
+                </p>
+              </div>
             </div>
           </div>
         </div>
