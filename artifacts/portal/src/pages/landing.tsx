@@ -229,37 +229,13 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="reveal d1">
-              <div className="wb-card">
-                <a
-                  className="real-thumb"
-                  href={REAL_BANGER.loomUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Watch the welcome banger on Loom"
-                >
-                  <img
-                    src={REAL_BANGER.thumbUrl}
-                    alt="Baingers welcome banger preview"
-                    loading="lazy"
-                  />
-                  <span className="source-tag">
-                    <span className="live-dot" />
-                    Loom · welcome banger
-                  </span>
-                  <div className="clip-play">
-                    <span />
-                  </div>
-                  <div className="runtime-chip">{REAL_BANGER.runtime}</div>
-                </a>
-                <div className="banger-body">
-                  <h3 className="banger-title">
-                    Watch a short walkthrough, then make the same thing yourself
-                  </h3>
-                  <div className="wb-react">
-                    <span className="pill">🔥 ❤️ 👏</span>
-                    <span className="pill made">I made this ✓</span>
-                  </div>
-                </div>
+              <div className="wb-illustration">
+                <img
+                  src="/banger-stack.png"
+                  alt="A stack of short video bangers"
+                  className="wb-illo-img"
+                  loading="lazy"
+                />
               </div>
             </div>
           </div>
