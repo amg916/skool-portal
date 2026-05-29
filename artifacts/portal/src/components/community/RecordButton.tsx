@@ -171,6 +171,30 @@ export function RecordButton({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, phase]);
 
+  // Wire the cam stream into BOTH live preview elements (the big bottom-left
+  // bubble and the small widget thumbnail) AFTER they mount. We previously
+  // tried to do this from inside start() via requestAnimationFrame, but the
+  // portal-rendered video elements weren't in the DOM yet when RAF fired, so
+  // the ref was null and srcObject never got set — blank black bubble.
+  // useEffect runs after React commits, which guarantees the refs exist.
+  useEffect(() => {
+    if (phase !== "recording" && phase !== "paused") return;
+    const cam = camStreamRef.current;
+    if (!cam) return;
+    // Both video elements share the same MediaStream — that's fine, the
+    // browser fans out frames to every consumer.
+    if (liveCamRef.current && liveCamRef.current.srcObject !== cam) {
+      liveCamRef.current.srcObject = cam;
+      liveCamRef.current.muted = true;
+      liveCamRef.current.play().catch(() => {});
+    }
+    if (camPreviewRef.current && camPreviewRef.current.srcObject !== cam) {
+      camPreviewRef.current.srcObject = cam;
+      camPreviewRef.current.muted = true;
+      camPreviewRef.current.play().catch(() => {});
+    }
+  }, [phase]);
+
   // ---------------------------------------------------------------------------
   // Start
   // ---------------------------------------------------------------------------
@@ -217,21 +241,10 @@ export function RecordButton({
       }
       composedRef.current = recordStream;
 
-      // Wire the floating-widget cam thumbnail.
-      if (camPreviewRef.current && camStream) {
-        camPreviewRef.current.srcObject = camStream;
-        camPreviewRef.current.muted = true;
-        camPreviewRef.current.play().catch(() => {});
-      }
-      // Wire the large live cam bubble at bottom-left of viewport. Bound on
-      // next tick because the portal mounts AFTER setPhase('recording').
-      requestAnimationFrame(() => {
-        if (liveCamRef.current && camStream) {
-          liveCamRef.current.srcObject = camStream;
-          liveCamRef.current.muted = true;
-          liveCamRef.current.play().catch(() => {});
-        }
-      });
+      // NOTE: cam preview elements (the bottom-left live bubble and the
+      // floating widget thumbnail) are wired in a useEffect that fires after
+      // React mounts the portal — see useEffect on [phase] above. Doing it
+      // here races the portal mount and leaves a blank video element.
 
       // 3. Mint upload URL from backend.
       const r = await fetch("/api/recordings/upload-url", {
