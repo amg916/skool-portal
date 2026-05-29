@@ -16,39 +16,38 @@ export function InviteButton({
   const [copied, setCopied] = useState(false);
 
   const handleClick = async () => {
-    const shareData = {
-      title: "Baingers",
-      text: "AI bangers, under 10 minutes. Members-only community for people actually making things with AI.",
-      url: INVITE_URL,
-    };
-
-    try {
-      if (
-        typeof navigator !== "undefined" &&
-        "share" in navigator &&
-        navigator.canShare?.(shareData)
-      ) {
-        await navigator.share(shareData);
-        return;
-      }
-    } catch {
-      /* fall through to clipboard */
-    }
-
     try {
       await navigator.clipboard.writeText(INVITE_URL);
       setCopied(true);
       toast({
-        title: "Invite link copied",
-        description: INVITE_URL,
+        title: "Invite link copied to clipboard",
+        description: `${INVITE_URL} — paste it in a DM, Slack, anywhere`,
       });
       setTimeout(() => setCopied(false), 2200);
     } catch {
-      toast({
-        title: "Copy failed",
-        description: `Share this link manually: ${INVITE_URL}`,
-        variant: "destructive",
-      });
+      // Older browsers — fall back to a hidden textarea trick
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = INVITE_URL;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        setCopied(true);
+        toast({
+          title: "Invite link copied",
+          description: INVITE_URL,
+        });
+        setTimeout(() => setCopied(false), 2200);
+      } catch {
+        toast({
+          title: "Copy failed",
+          description: `Share this link manually: ${INVITE_URL}`,
+          variant: "destructive",
+        });
+      }
     }
   };
 
