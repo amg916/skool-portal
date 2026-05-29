@@ -39,6 +39,8 @@ import { useToast } from "@/hooks/use-toast";
 import { AdminOnlyNotice } from "@/components/community/AdminOnlyNotice";
 import { GroupInfoCard } from "@/components/community/GroupInfoCard";
 import { LeaderboardWidget } from "@/components/community/LeaderboardWidget";
+import { StarterCard } from "@/components/community/StarterCard";
+import "./community.css";
 import { UserAvatar } from "@/components/user-avatar";
 import { VideoEmbed } from "@/components/community/VideoEmbed";
 import { UpcomingEventBanner } from "@/components/community/UpcomingEventBanner";
@@ -419,9 +421,20 @@ export default function CommunityPage() {
   const canPost = activeChannel && (!activeChannel.adminsOnly || user?.role === "admin");
 
   return (
-    <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-6">
+    <div className="baingers-community max-w-[1240px] mx-auto px-4 sm:px-6 py-6">
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6">
         <div className="min-w-0 space-y-5">
+          <StarterCard
+            onWatchClick={() => {
+              const video = document.querySelector("iframe, video, [data-loom-embed]");
+              if (video) {
+                const top =
+                  video.getBoundingClientRect().top + window.scrollY - 90;
+                window.scrollTo({ top, behavior: "smooth" });
+              }
+            }}
+            onPostClick={() => setComposerOpen(true)}
+          />
           {canPost && (
             <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
               {composerOpen ? (
@@ -496,7 +509,7 @@ export default function CommunityPage() {
                     fallbackClassName="bg-foreground text-background text-xs"
                   />
                   <span className="flex-1 px-4 py-2.5 rounded-full bg-muted text-muted-foreground text-sm hover:bg-muted/70 transition-colors">
-                    Write something
+                    Introduce yourself. What do you want to make?
                   </span>
                 </button>
               )}

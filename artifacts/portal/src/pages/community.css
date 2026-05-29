@@ -1,0 +1,238 @@
+/* ============================================================
+   BAINGERS · community redesign (logged-in first-run view)
+   Scoped under .baingers-community so it does not leak to other pages.
+   ============================================================ */
+
+.baingers-community {
+  --b-blue: #2F6BFF;
+  --b-blue-50: #EAF1FF;
+  --b-purple: #7C3AED;
+  --b-purple-50: #F2EBFE;
+  --b-purple-600: #6A29D6;
+  --b-orange: #FB7A1E;
+  --b-orange-50: #FFF2E6;
+  --b-orange-600: #E8650A;
+  --b-green: #16B981;
+  --b-green-50: #E6F7F1;
+  --b-green-600: #0E9E6E;
+  --b-gold: #F5B400;
+  --b-ink: #0F1729;
+  --b-grad-brand: linear-gradient(105deg, #2F6BFF 0%, #7C3AED 52%, #FB7A1E 100%);
+}
+
+.baingers-community .ai-txt {
+  background: var(--b-grad-brand);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  animation: bcAiShift 5s ease-in-out infinite;
+}
+@keyframes bcAiShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ---------- Start here card ---------- */
+.bc-starter {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--b-ink);
+  color: #fff;
+  box-shadow: 0 6px 16px -4px rgba(15,23,41,0.10), 0 2px 6px rgba(15,23,41,0.05);
+}
+.bc-starter::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 120% at 88% 0%, rgba(124,58,237,0.55), transparent 60%),
+    radial-gradient(50% 120% at 100% 100%, rgba(251,122,30,0.4), transparent 55%),
+    radial-gradient(60% 130% at 0% 0%, rgba(47,107,255,0.45), transparent 60%);
+  pointer-events: none;
+}
+.bc-starter > * { position: relative; z-index: 2; }
+.bc-starter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 5px 11px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  color: #fff;
+}
+.bc-starter-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+}
+.bc-step-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 13px;
+  padding: 14px 16px;
+  color: #fff;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, transform .15s;
+}
+.bc-step-row:hover {
+  background: rgba(255,255,255,0.14);
+  transform: translateX(2px);
+}
+.bc-step-check {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex: none;
+  border: 2px solid rgba(255,255,255,0.4);
+  display: grid;
+  place-items: center;
+  transition: background .25s, border-color .25s;
+}
+.bc-step-check svg {
+  width: 14px;
+  height: 14px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 3;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.bc-step-row.done .bc-step-check {
+  background: var(--b-green);
+  border-color: var(--b-green);
+}
+.bc-step-row.done .bc-step-check svg { opacity: 1; }
+.bc-step-row.done .bc-step-name {
+  text-decoration: line-through;
+  text-decoration-color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.65);
+}
+.bc-progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.18);
+  overflow: hidden;
+}
+.bc-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #fff, rgba(255,255,255,0.85));
+  transition: width .45s cubic-bezier(.2,.8,.3,1);
+}
+.bc-starter-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  z-index: 3;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background .2s;
+}
+.bc-starter-close:hover { background: rgba(255,255,255,0.24); }
+
+/* ---------- Brand sidebar card ---------- */
+.bc-side-banner {
+  height: 130px;
+  background: var(--b-ink);
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.bc-side-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(70% 120% at 85% 15%, rgba(124,58,237,0.6), transparent 55%),
+    radial-gradient(60% 120% at 10% 90%, rgba(47,107,255,0.5), transparent 55%);
+}
+.bc-side-logo {
+  position: relative;
+  z-index: 2;
+  font-weight: 800;
+  font-size: 56px;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  background: var(--b-grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 14px rgba(124,58,237,0.5));
+}
+.bc-found {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--b-orange-50);
+  border: 1px solid color-mix(in srgb, var(--b-orange) 25%, transparent);
+  border-radius: 13px;
+  padding: 11px 13px;
+}
+.bc-found .em { font-size: 18px; flex: none; }
+.bc-found .t {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--b-orange-600);
+  line-height: 1.35;
+}
+
+/* ---------- Leaderboard rank chips ---------- */
+.bc-rank-1 { background: var(--b-gold); color: #fff; }
+.bc-rank-2 { background: #B7C2D4; color: #fff; }
+.bc-rank-3 { background: #E0A36A; color: #fff; }
+.bc-rank-x { background: var(--b-blue-50); color: var(--b-purple-600); }
+.bc-pts-zero { color: #94A3B8; }
+
+/* ---------- Points hint ---------- */
+.bc-side-hint {
+  font-size: 12px;
+  color: #64748B;
+  text-align: center;
+  padding: 0 8px;
+  line-height: 1.5;
+}
+
+/* ---------- Q&A banner (purple) ---------- */
+.bc-qna {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  padding: 12px 16px;
+  background: var(--b-purple-50);
+  border: 1px solid color-mix(in srgb, var(--b-purple) 22%, transparent);
+  border-radius: 13px;
+  color: var(--b-purple-600);
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  flex-wrap: wrap;
+}
+.bc-qna b { color: var(--b-purple-600); font-weight: 800; }
+.bc-qna svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; flex: none; }
