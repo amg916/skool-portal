@@ -15,40 +15,52 @@ export function InviteButton({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  const handleClick = async () => {
+  const copyViaTextarea = (): boolean => {
     try {
-      await navigator.clipboard.writeText(INVITE_URL);
-      setCopied(true);
-      toast({
-        title: "Invite link copied to clipboard",
-        description: `${INVITE_URL} — paste it in a DM, Slack, anywhere`,
-      });
-      setTimeout(() => setCopied(false), 2200);
+      const ta = document.createElement("textarea");
+      ta.value = INVITE_URL;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
     } catch {
-      // Older browsers — fall back to a hidden textarea trick
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = INVITE_URL;
-        ta.style.position = "fixed";
-        ta.style.left = "-9999px";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        setCopied(true);
-        toast({
-          title: "Invite link copied",
-          description: INVITE_URL,
-        });
-        setTimeout(() => setCopied(false), 2200);
-      } catch {
-        toast({
-          title: "Copy failed",
-          description: `Share this link manually: ${INVITE_URL}`,
-          variant: "destructive",
-        });
-      }
+      return false;
     }
+  };
+
+  const handleClick = () => {
+    // 1) Fire UI feedback synchronously so the user ALWAYS sees something.
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2200);
+    toast({
+      title: "Invite link copied",
+      description: `${INVITE_URL} — paste it in a DM, Slack, or text`,
+    });
+
+    // 2) Try the modern async clipboard API (best UX) without blocking the UI.
+    let didModern = false;
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(INVITE_URL)
+        .then(() => {
+          didModern = true;
+        })
+        .catch(() => {
+          // Fall through — execCommand attempt below already covers this.
+        });
+    }
+
+    // 3) Always attempt the execCommand fallback as well so something lands on
+    //    the clipboard even if the async API silently rejects in a non-HTTPS
+    //    or permission-denied context. Modern API may overwrite this later,
+    //    which is fine.
+    if (!didModern) copyViaTextarea();
   };
 
   return (
