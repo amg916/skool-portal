@@ -37,9 +37,16 @@ router.get("/search", requireAuth, async (req, res) => {
       .from(postsTable)
       .leftJoin(usersTable, eq(usersTable.id, postsTable.authorId))
       .leftJoin(channelsTable, eq(channelsTable.id, postsTable.channelId))
+      // Two paths to a transcript:
+      //   1. posts.recording_id → recordings.id (when the post was created
+      //      via the Record-a-banger flow and we set recordingId).
+      //   2. posts.video_embed_id matches recordings.stream_uid (when a
+      //      user pasted a CF Stream URL into the composer without a
+      //      recordingId — videoEmbedId IS the streamUid for cloudflare-stream).
+      // We OR-join both shapes via SQL fragment.
       .leftJoin(
         recordingsTable,
-        eq(recordingsTable.id, postsTable.recordingId),
+        sql`(${recordingsTable.id} = ${postsTable.recordingId} OR ${recordingsTable.streamUid} = ${postsTable.videoEmbedId})`,
       )
       .where(
         or(
