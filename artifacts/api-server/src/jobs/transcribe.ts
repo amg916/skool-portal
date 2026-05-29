@@ -1,6 +1,10 @@
 import { eq } from "drizzle-orm";
 import { db, recordingsTable } from "@workspace/db";
-import { streamMp4Url } from "../lib/cfStream.js";
+import {
+  provisionMp4Download,
+  streamMp4Url,
+  waitForMp4Ready,
+} from "../lib/cfStream.js";
 
 /**
  * Whisper transcription pipeline for a finished CF Stream recording.
@@ -39,32 +43,56 @@ export async function kickTranscriptionAsync(recordingId: number): Promise<void>
       return;
     }
 
-    const mp4Url = rec.mp4Url || streamMp4Url(rec.streamUid);
-
-    // Wait up to ~3 min for CF MP4 download to become available (CF makes it
-    // available shortly after `ready`, but not instantly).
-    let audioBuf: Buffer | null = null;
-    for (let attempt = 0; attempt < 18; attempt++) {
-      const r = await fetch(mp4Url);
-      if (r.ok) {
-        const ab = await r.arrayBuffer();
-        audioBuf = Buffer.from(ab);
-        break;
-      }
-      await new Promise((res) => setTimeout(res, 10_000));
-    }
-    if (!audioBuf) {
-      console.error(
-        "[transcribe] could not download MP4 for",
-        rec.streamUid,
-        "after retries",
-      );
+    // CF doesn't auto-provision MP4 downloads — only HLS. Request one
+    // explicitly, then poll until it's ready (typically <90s for short clips).
+    console.log("[transcribe] provisioning MP4", rec.streamUid);
+    try {
+      await provisionMp4Download(rec.streamUid);
+    } catch (err) {
+      console.error("[transcribe] provision failed", err);
       await db
         .update(recordingsTable)
-        .set({ errorMessage: "Transcription unavailable: MP4 download timed out" })
+        .set({
+          errorMessage: `Transcription unavailable: provision failed (${
+            err instanceof Error ? err.message : String(err)
+          })`,
+        })
         .where(eq(recordingsTable.id, recordingId));
       return;
     }
+
+    let mp4Url: string;
+    try {
+      const ready = await waitForMp4Ready(rec.streamUid, {
+        timeoutMs: 180_000,
+      });
+      mp4Url = ready.url || streamMp4Url(rec.streamUid);
+      console.log("[transcribe] MP4 ready", rec.streamUid);
+    } catch (err) {
+      console.error("[transcribe] MP4 poll failed", err);
+      await db
+        .update(recordingsTable)
+        .set({
+          errorMessage: "Transcription unavailable: MP4 not ready after 3 min",
+        })
+        .where(eq(recordingsTable.id, recordingId));
+      return;
+    }
+
+    const r0 = await fetch(mp4Url);
+    if (!r0.ok) {
+      console.error("[transcribe] MP4 fetch HTTP", r0.status, "for", mp4Url);
+      await db
+        .update(recordingsTable)
+        .set({
+          errorMessage: `Transcription unavailable: MP4 fetch HTTP ${r0.status}`,
+        })
+        .where(eq(recordingsTable.id, recordingId));
+      return;
+    }
+    const ab = await r0.arrayBuffer();
+    const audioBuf = Buffer.from(ab);
+    console.log("[transcribe] MP4 fetched", audioBuf.length, "bytes");
 
     // POST to OpenAI Whisper.
     const form = new FormData();

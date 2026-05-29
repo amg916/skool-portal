@@ -118,10 +118,92 @@ export function streamEmbedUrl(uid: string): string {
 
 /**
  * Build the MP4 download URL (used for Whisper audio extraction).
- * CF Stream provides this once encoding is ready when "downloadable" is true.
+ * Only valid once `provisionMp4Download` has been called for the uid AND
+ * CF reports `result.default.status === "ready"`.
  */
 export function streamMp4Url(uid: string): string {
   return `https://${cfStreamSubdomain()}.cloudflarestream.com/${uid}/downloads/default.mp4`;
+}
+
+/**
+ * Provision a downloadable MP4 for a Stream video. CF generates the .mp4
+ * asynchronously after this call. Idempotent — calling again for an
+ * already-provisioned video returns the existing state.
+ *
+ * Returns the CF-reported state: { status: "inprogress" | "ready", percent }.
+ *
+ * Spec: https://developers.cloudflare.com/stream/viewing-videos/download-videos/
+ */
+export async function provisionMp4Download(uid: string): Promise<{
+  status: string;
+  percentComplete: number;
+  url: string;
+}> {
+  const accountId = cfStreamAccountId();
+  const res = await fetch(
+    `${CF_BASE}/accounts/${accountId}/stream/${uid}/downloads`,
+    {
+      method: "POST",
+      headers: cfHeaders(),
+    },
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`CF Stream provision-mp4 failed: ${res.status} ${text}`);
+  }
+  const j = (await res.json()) as {
+    result?: {
+      default?: { status?: string; percentComplete?: number; url?: string };
+    };
+  };
+  const d = j.result?.default;
+  return {
+    status: d?.status ?? "unknown",
+    percentComplete: d?.percentComplete ?? 0,
+    url: d?.url ?? streamMp4Url(uid),
+  };
+}
+
+/**
+ * Poll the MP4 download endpoint until it reports ready (or timeout).
+ * Returns the final state object.
+ */
+export async function waitForMp4Ready(
+  uid: string,
+  opts: { timeoutMs?: number; pollMs?: number } = {},
+): Promise<{ status: string; percentComplete: number; url: string }> {
+  const accountId = cfStreamAccountId();
+  const timeoutMs = opts.timeoutMs ?? 180_000;
+  const pollMs = opts.pollMs ?? 5_000;
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < timeoutMs) {
+    const res = await fetch(
+      `${CF_BASE}/accounts/${accountId}/stream/${uid}/downloads`,
+      { headers: cfHeaders() },
+    );
+    if (res.ok) {
+      const j = (await res.json()) as {
+        result?: {
+          default?: {
+            status?: string;
+            percentComplete?: number;
+            url?: string;
+          };
+        };
+      };
+      const d = j.result?.default;
+      if (d?.status === "ready") {
+        return {
+          status: "ready",
+          percentComplete: 100,
+          url: d.url ?? streamMp4Url(uid),
+        };
+      }
+    }
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(`CF Stream MP4 not ready after ${timeoutMs}ms for ${uid}`);
 }
 
 /**
