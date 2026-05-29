@@ -104,7 +104,7 @@ export default function SchoolLessonPage() {
           disabled={isPending}
           aria-label={completionLabel}
           aria-pressed={lesson.isCompleted}
-          className={`focus-visible:ring-2 focus-visible:ring-ring ${lesson.isCompleted ? "text-primary border-primary bg-primary/5" : ""}`}
+          className={`rounded-full focus-visible:ring-2 focus-visible:ring-ring ${lesson.isCompleted ? "border-[var(--b-green)] text-[var(--b-green-600)] bg-[var(--b-green-50)] hover:bg-[var(--b-green-50)]" : "bg-foreground text-background hover:bg-foreground/90"}`}
         >
           {lesson.isCompleted ? <CheckCircle2 className="h-4 w-4 mr-2" aria-hidden="true" /> : <Circle className="h-4 w-4 mr-2" aria-hidden="true" />}
           {lesson.isCompleted ? "Completed" : "Mark Complete"}
@@ -112,7 +112,12 @@ export default function SchoolLessonPage() {
       </div>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">{lesson.title}</h1>
+        <span className="text-[11px] font-extrabold tracking-[0.08em] uppercase text-[var(--b-blue)]">
+          Lesson
+        </span>
+        <h1 className="text-[2.1rem] font-extrabold tracking-tight text-foreground mt-1 leading-[1.1]">
+          {lesson.title}
+        </h1>
       </div>
 
       <div className="mt-8">
@@ -128,7 +133,7 @@ export default function SchoolLessonPage() {
             disabled={isPending}
             aria-label={completionLabel}
             aria-pressed={lesson.isCompleted}
-            className={`focus-visible:ring-2 focus-visible:ring-ring ${lesson.isCompleted ? "text-primary border-primary bg-primary/5" : ""}`}
+            className={`rounded-full focus-visible:ring-2 focus-visible:ring-ring ${lesson.isCompleted ? "border-[var(--b-green)] text-[var(--b-green-600)] bg-[var(--b-green-50)] hover:bg-[var(--b-green-50)]" : "bg-foreground text-background hover:bg-foreground/90"}`}
           >
             {lesson.isCompleted ? <CheckCircle2 className="h-5 w-5 mr-2" aria-hidden="true" /> : <Circle className="h-5 w-5 mr-2" aria-hidden="true" />}
             {lesson.isCompleted ? "Completed" : "Mark Complete"}

@@ -1,0 +1,126 @@
+/* ============================================================
+   BAINGERS · brand utilities used across every page
+   ============================================================ */
+:root {
+  --b-blue: #2F6BFF;
+  --b-blue-50: #EAF1FF;
+  --b-blue-700: #1846C7;
+  --b-purple: #7C3AED;
+  --b-purple-50: #F2EBFE;
+  --b-purple-600: #6A29D6;
+  --b-orange: #FB7A1E;
+  --b-orange-50: #FFF2E6;
+  --b-orange-600: #E8650A;
+  --b-green: #16B981;
+  --b-green-50: #E6F7F1;
+  --b-green-600: #0E9E6E;
+  --b-gold: #F5B400;
+  --b-ink: #0F1729;
+  --b-grad-brand: linear-gradient(105deg, #2F6BFF 0%, #7C3AED 52%, #FB7A1E 100%);
+}
+
+/* gradient "ai" treatment used inside brand names */
+.ai-txt {
+  background: var(--b-grad-brand);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  animation: bAiShift 5s ease-in-out infinite;
+}
+@keyframes bAiShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* gradient text helper (any element) */
+.grad-text {
+  background: var(--b-grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* small brand gradient pill button */
+.b-grad-btn {
+  background: var(--b-grad-brand);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+  box-shadow: 0 8px 22px -8px rgba(124,58,237,0.55);
+}
+.b-grad-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+
+/* rank chips — gold/silver/bronze + 4+ */
+.b-rank-1 { background: var(--b-gold); color: #fff; }
+.b-rank-2 { background: #B7C2D4; color: #fff; }
+.b-rank-3 { background: #E0A36A; color: #fff; }
+.b-rank-x { background: var(--b-blue-50); color: var(--b-purple-600); }
+
+/* founding-member callout block */
+.b-found {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--b-orange-50);
+  border: 1px solid color-mix(in srgb, var(--b-orange) 25%, transparent);
+  border-radius: 13px;
+  padding: 11px 13px;
+}
+.b-found .em { font-size: 18px; flex: none; }
+.b-found .t {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--b-orange-600);
+  line-height: 1.35;
+}
+
+/* dark gradient hero panel (for About / page headers) */
+.b-hero-panel {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--b-ink);
+  color: #fff;
+}
+.b-hero-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 120% at 88% 0%, rgba(124,58,237,0.55), transparent 60%),
+    radial-gradient(50% 120% at 100% 100%, rgba(251,122,30,0.4), transparent 55%),
+    radial-gradient(60% 130% at 0% 0%, rgba(47,107,255,0.45), transparent 60%);
+  pointer-events: none;
+}
+.b-hero-panel > * { position: relative; z-index: 2; }
+
+/* small badge pill used on hero panel ("FOUNDING MEMBER", "EARLY ACCESS") */
+.b-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 5px 11px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  color: #fff;
+}
+.b-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+}

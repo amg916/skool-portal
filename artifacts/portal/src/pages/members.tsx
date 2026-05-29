@@ -53,8 +53,8 @@ export default function MembersPage() {
                 Admins
               </Chip>
             </div>
-            <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-              Invite
+            <Button className="bg-foreground text-background hover:bg-foreground/90 rounded-full">
+              Invite a builder
             </Button>
           </div>
 

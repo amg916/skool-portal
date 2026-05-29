@@ -18,7 +18,7 @@ async function fetchLeaderboard(period: Period): Promise<{ period: Period; entri
   return res.json();
 }
 
-const RANK_COLORS = ["bg-amber-400", "bg-zinc-300", "bg-orange-400"];
+const RANK_CLASS = ["b-rank-1", "b-rank-2", "b-rank-3"] as const;
 
 function pointsToLevel(points: number): number {
   if (points >= 1000) return 9;
@@ -144,8 +144,8 @@ function LeaderboardColumn({
           {entries.map((e, idx) => (
             <li key={e.userId} className="flex items-center gap-3">
               <span
-                className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-bold text-foreground shrink-0 ${
-                  idx < 3 ? RANK_COLORS[idx] : "bg-muted"
+                className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-extrabold shrink-0 ${
+                  idx < 3 ? RANK_CLASS[idx] : "b-rank-x"
                 }`}
               >
                 {idx + 1}
