@@ -34,6 +34,7 @@ import AdminSegments from "@/pages/admin/segments";
 import AdminSubsections from "@/pages/admin/subsections";
 import AdminLessons from "@/pages/admin/lessons";
 import AdminProgress from "@/pages/admin/progress";
+import { TermsPage, PrivacyPage } from "@/pages/legal";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,8 @@ function Router() {
       <Route path="/" component={LandingPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/signup" component={SignupPage} />
+      <Route path="/terms" component={TermsPage} />
+      <Route path="/privacy" component={PrivacyPage} />
       <Route path="/force-change-password">
         <AuthGuard>
           <ForceChangePasswordPage />
