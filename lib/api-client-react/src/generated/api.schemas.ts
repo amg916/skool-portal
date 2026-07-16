@@ -5,6 +5,117 @@
  * Community & School Portal API
  * OpenAPI spec version: 0.1.0
  */
+export interface AppCategory {
+  id: number;
+  slug: string;
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+  sortOrder: number;
+}
+
+export interface AppModule {
+  id: number;
+  name: string;
+  description?: string | null;
+  sortOrder: number;
+}
+
+export type AppSummaryStage =
+  (typeof AppSummaryStage)[keyof typeof AppSummaryStage];
+
+export const AppSummaryStage = {
+  submitted: "submitted",
+  incubating: "incubating",
+  graduated: "graduated",
+  retired: "retired",
+  rejected: "rejected",
+} as const;
+
+export type AppSummaryAccessType =
+  (typeof AppSummaryAccessType)[keyof typeof AppSummaryAccessType];
+
+export const AppSummaryAccessType = {
+  link_out: "link_out",
+  provisioned: "provisioned",
+} as const;
+
+export interface AppSummary {
+  id: number;
+  slug: string;
+  name: string;
+  tagline?: string | null;
+  categoryId: number;
+  categorySlug: string;
+  iconUrl?: string | null;
+  stage: AppSummaryStage;
+  accessType: AppSummaryAccessType;
+  isFirstParty: boolean;
+}
+
+export type AppDetail = AppSummary & {
+  description?: string | null;
+  externalUrl?: string | null;
+  screenshots?: string[];
+  modules?: AppModule[];
+};
+
+export type CreateAppRequestStage =
+  (typeof CreateAppRequestStage)[keyof typeof CreateAppRequestStage];
+
+export const CreateAppRequestStage = {
+  submitted: "submitted",
+  incubating: "incubating",
+  graduated: "graduated",
+  retired: "retired",
+  rejected: "rejected",
+} as const;
+
+export type CreateAppRequestAccessType =
+  (typeof CreateAppRequestAccessType)[keyof typeof CreateAppRequestAccessType];
+
+export const CreateAppRequestAccessType = {
+  link_out: "link_out",
+  provisioned: "provisioned",
+} as const;
+
+export interface CreateAppRequest {
+  /**
+   * @minLength 1
+   * @pattern ^[a-z0-9-]+$
+   */
+  slug: string;
+  /** @minLength 1 */
+  name: string;
+  tagline?: string;
+  description?: string;
+  categoryId: number;
+  externalUrl?: string;
+  isFirstParty?: boolean;
+  stage?: CreateAppRequestStage;
+  accessType?: CreateAppRequestAccessType;
+}
+
+export type UpdateAppRequestStage =
+  (typeof UpdateAppRequestStage)[keyof typeof UpdateAppRequestStage];
+
+export const UpdateAppRequestStage = {
+  submitted: "submitted",
+  incubating: "incubating",
+  graduated: "graduated",
+  retired: "retired",
+  rejected: "rejected",
+} as const;
+
+export interface UpdateAppRequest {
+  name?: string;
+  tagline?: string;
+  description?: string;
+  categoryId?: number;
+  externalUrl?: string;
+  stage?: UpdateAppRequestStage;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -113,7 +224,9 @@ export interface Comment {
   postId: number;
   authorId: number;
   authorName: string;
+  authorAvatarUrl?: string | null;
   body: string;
+  isBuild: boolean;
   createdAt: string;
 }
 
@@ -257,3 +370,19 @@ export interface UploadResult {
   originalName: string;
   size: number;
 }
+
+export type ListAppsParams = {
+  category?: string;
+  stage?: ListAppsStage;
+  q?: string;
+};
+
+export type ListAppsStage = (typeof ListAppsStage)[keyof typeof ListAppsStage];
+
+export const ListAppsStage = {
+  submitted: "submitted",
+  incubating: "incubating",
+  graduated: "graduated",
+  retired: "retired",
+  rejected: "rejected",
+} as const;

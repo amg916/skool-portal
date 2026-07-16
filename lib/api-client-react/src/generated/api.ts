@@ -18,9 +18,13 @@ import type {
 
 import type {
   AdminProgressRow,
+  AppCategory,
+  AppDetail,
+  AppSummary,
   ChangePasswordRequest,
   Channel,
   Comment,
+  CreateAppRequest,
   CreateChannelRequest,
   CreateCommentRequest,
   CreateLessonRequest,
@@ -32,6 +36,7 @@ import type {
   HealthStatus,
   Lesson,
   LessonCompletion,
+  ListAppsParams,
   LoginRequest,
   Post,
   ProgressRollup,
@@ -40,6 +45,7 @@ import type {
   Segment,
   Subsection,
   ToggleCompletionRequest,
+  UpdateAppRequest,
   UpdateChannelRequest,
   UpdateLessonRequest,
   UpdateSegmentRequest,
@@ -81,11 +87,11 @@ export const getHealthCheckQueryOptions = <
   TData = Awaited<ReturnType<typeof healthCheck>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<
+  query?: UseQueryOptions<
     Awaited<ReturnType<typeof healthCheck>>,
     TError,
     TData
-  >, 'queryKey'> & { queryKey?: QueryKey };
+  >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -116,11 +122,11 @@ export function useHealthCheck<
   TData = Awaited<ReturnType<typeof healthCheck>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<
+  query?: UseQueryOptions<
     Awaited<ReturnType<typeof healthCheck>>,
     TError,
     TData
-  >, 'queryKey'> & { queryKey?: QueryKey };
+  >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
@@ -154,7 +160,7 @@ export const getGetMeQueryOptions = <
   TData = Awaited<ReturnType<typeof getMe>>,
   TError = ErrorType<void>,
 >(options?: {
-  query?: Omit<UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, 'queryKey'> & { queryKey?: QueryKey };
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -183,7 +189,7 @@ export function useGetMe<
   TData = Awaited<ReturnType<typeof getMe>>,
   TError = ErrorType<void>,
 >(options?: {
-  query?: Omit<UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, 'queryKey'> & { queryKey?: QueryKey };
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetMeQueryOptions(options);
@@ -470,11 +476,11 @@ export const getListChannelsQueryOptions = <
   TData = Awaited<ReturnType<typeof listChannels>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<
+  query?: UseQueryOptions<
     Awaited<ReturnType<typeof listChannels>>,
     TError,
     TData
-  >, 'queryKey'> & { queryKey?: QueryKey };
+  >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -505,11 +511,11 @@ export function useListChannels<
   TData = Awaited<ReturnType<typeof listChannels>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<
+  query?: UseQueryOptions<
     Awaited<ReturnType<typeof listChannels>>,
     TError,
     TData
-  >, 'queryKey'> & { queryKey?: QueryKey };
+  >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListChannelsQueryOptions(options);
@@ -892,11 +898,11 @@ export const getListPostsByChannelQueryOptions = <
 >(
   channelId: number,
   options?: {
-    query?: Omit<UseQueryOptions<
+    query?: UseQueryOptions<
       Awaited<ReturnType<typeof listPostsByChannel>>,
       TError,
       TData
-    >, 'queryKey'> & { queryKey?: QueryKey };
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -937,11 +943,11 @@ export function useListPostsByChannel<
 >(
   channelId: number,
   options?: {
-    query?: Omit<UseQueryOptions<
+    query?: UseQueryOptions<
       Awaited<ReturnType<typeof listPostsByChannel>>,
       TError,
       TData
-    >, 'queryKey'> & { queryKey?: QueryKey };
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1320,11 +1326,11 @@ export const getListCommentsQueryOptions = <
 >(
   postId: number,
   options?: {
-    query?: Omit<UseQueryOptions<
+    query?: UseQueryOptions<
       Awaited<ReturnType<typeof listComments>>,
       TError,
       TData
-    >, 'queryKey'> & { queryKey?: QueryKey };
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -1363,11 +1369,11 @@ export function useListComments<
 >(
   postId: number,
   options?: {
-    query?: Omit<UseQueryOptions<
+    query?: UseQueryOptions<
       Awaited<ReturnType<typeof listComments>>,
       TError,
       TData
-    >, 'queryKey'> & { queryKey?: QueryKey };
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1575,11 +1581,11 @@ export const getListSegmentsQueryOptions = <
   TData = Awaited<ReturnType<typeof listSegments>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<
+  query?: UseQueryOptions<
     Awaited<ReturnType<typeof listSegments>>,
     TError,
     TData
-  >, 'queryKey'> & { queryKey?: QueryKey };
+  >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -1610,11 +1616,11 @@ export function useListSegments<
   TData = Awaited<ReturnType<typeof listSegments>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<
+  query?: UseQueryOptions<
     Awaited<ReturnType<typeof listSegments>>,
     TError,
     TData
-  >, 'queryKey'> & { queryKey?: QueryKey };
+  >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListSegmentsQueryOptions(options);
@@ -1653,11 +1659,11 @@ export const getListSubsectionsQueryOptions = <
 >(
   segmentId: number,
   options?: {
-    query?: Omit<UseQueryOptions<
+    query?: UseQueryOptions<
       Awaited<ReturnType<typeof listSubsections>>,
       TError,
       TData
-    >, 'queryKey'> & { queryKey?: QueryKey };
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -1697,11 +1703,11 @@ export function useListSubsections<
 >(
   segmentId: number,
   options?: {
-    query?: Omit<UseQueryOptions<
+    query?: UseQueryOptions<
       Awaited<ReturnType<typeof listSubsections>>,
       TError,
       TData
-    >, 'queryKey'> & { queryKey?: QueryKey };
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1741,11 +1747,11 @@ export const getListLessonsQueryOptions = <
 >(
   subsectionId: number,
   options?: {
-    query?: Omit<UseQueryOptions<
+    query?: UseQueryOptions<
       Awaited<ReturnType<typeof listLessons>>,
       TError,
       TData
-    >, 'queryKey'> & { queryKey?: QueryKey };
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -1785,11 +1791,11 @@ export function useListLessons<
 >(
   subsectionId: number,
   options?: {
-    query?: Omit<UseQueryOptions<
+    query?: UseQueryOptions<
       Awaited<ReturnType<typeof listLessons>>,
       TError,
       TData
-    >, 'queryKey'> & { queryKey?: QueryKey };
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1829,11 +1835,11 @@ export const getGetLessonQueryOptions = <
 >(
   lessonId: number,
   options?: {
-    query?: Omit<UseQueryOptions<
+    query?: UseQueryOptions<
       Awaited<ReturnType<typeof getLesson>>,
       TError,
       TData
-    >, 'queryKey'> & { queryKey?: QueryKey };
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -1870,11 +1876,11 @@ export function useGetLesson<
 >(
   lessonId: number,
   options?: {
-    query?: Omit<UseQueryOptions<
+    query?: UseQueryOptions<
       Awaited<ReturnType<typeof getLesson>>,
       TError,
       TData
-    >, 'queryKey'> & { queryKey?: QueryKey };
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -3031,11 +3037,11 @@ export const getGetMyProgressQueryOptions = <
   TData = Awaited<ReturnType<typeof getMyProgress>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<
+  query?: UseQueryOptions<
     Awaited<ReturnType<typeof getMyProgress>>,
     TError,
     TData
-  >, 'queryKey'> & { queryKey?: QueryKey };
+  >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -3066,11 +3072,11 @@ export function useGetMyProgress<
   TData = Awaited<ReturnType<typeof getMyProgress>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<
+  query?: UseQueryOptions<
     Awaited<ReturnType<typeof getMyProgress>>,
     TError,
     TData
-  >, 'queryKey'> & { queryKey?: QueryKey };
+  >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetMyProgressQueryOptions(options);
@@ -3106,11 +3112,11 @@ export const getGetAdminProgressQueryOptions = <
   TData = Awaited<ReturnType<typeof getAdminProgress>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<
+  query?: UseQueryOptions<
     Awaited<ReturnType<typeof getAdminProgress>>,
     TError,
     TData
-  >, 'queryKey'> & { queryKey?: QueryKey };
+  >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -3141,11 +3147,11 @@ export function useGetAdminProgress<
   TData = Awaited<ReturnType<typeof getAdminProgress>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<
+  query?: UseQueryOptions<
     Awaited<ReturnType<typeof getAdminProgress>>,
     TError,
     TData
-  >, 'queryKey'> & { queryKey?: QueryKey };
+  >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetAdminProgressQueryOptions(options);
@@ -3179,7 +3185,7 @@ export const getListUsersQueryOptions = <
   TData = Awaited<ReturnType<typeof listUsers>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>, 'queryKey'> & { queryKey?: QueryKey };
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -3210,7 +3216,7 @@ export function useListUsers<
   TData = Awaited<ReturnType<typeof listUsers>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Omit<UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>, 'queryKey'> & { queryKey?: QueryKey };
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListUsersQueryOptions(options);
@@ -3639,4 +3645,505 @@ export const useDeleteUpload = <
   TContext
 > => {
   return useMutation(getDeleteUploadMutationOptions(options));
+};
+
+/**
+ * @summary List app categories
+ */
+export const getListAppCategoriesUrl = () => {
+  return `/api/app-categories`;
+};
+
+export const listAppCategories = async (
+  options?: RequestInit,
+): Promise<AppCategory[]> => {
+  return customFetch<AppCategory[]>(getListAppCategoriesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAppCategoriesQueryKey = () => {
+  return [`/api/app-categories`] as const;
+};
+
+export const getListAppCategoriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAppCategories>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAppCategories>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAppCategoriesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAppCategories>>
+  > = ({ signal }) => listAppCategories({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAppCategories>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAppCategoriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAppCategories>>
+>;
+export type ListAppCategoriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List app categories
+ */
+
+export function useListAppCategories<
+  TData = Awaited<ReturnType<typeof listAppCategories>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAppCategories>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAppCategoriesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List apps
+ */
+export const getListAppsUrl = (params?: ListAppsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/apps?${stringifiedParams}`
+    : `/api/apps`;
+};
+
+export const listApps = async (
+  params?: ListAppsParams,
+  options?: RequestInit,
+): Promise<AppSummary[]> => {
+  return customFetch<AppSummary[]>(getListAppsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAppsQueryKey = (params?: ListAppsParams) => {
+  return [`/api/apps`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAppsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listApps>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAppsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listApps>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAppsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listApps>>> = ({
+    signal,
+  }) => listApps(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listApps>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAppsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listApps>>
+>;
+export type ListAppsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List apps
+ */
+
+export function useListApps<
+  TData = Awaited<ReturnType<typeof listApps>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAppsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listApps>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAppsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get an app by slug
+ */
+export const getGetAppUrl = (slug: string) => {
+  return `/api/apps/${slug}`;
+};
+
+export const getApp = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<AppDetail> => {
+  return customFetch<AppDetail>(getGetAppUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAppQueryKey = (slug: string) => {
+  return [`/api/apps/${slug}`] as const;
+};
+
+export const getGetAppQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApp>>,
+  TError = ErrorType<void>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getApp>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAppQueryKey(slug);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApp>>> = ({
+    signal,
+  }) => getApp(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getApp>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetAppQueryResult = NonNullable<Awaited<ReturnType<typeof getApp>>>;
+export type GetAppQueryError = ErrorType<void>;
+
+/**
+ * @summary Get an app by slug
+ */
+
+export function useGetApp<
+  TData = Awaited<ReturnType<typeof getApp>>,
+  TError = ErrorType<void>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getApp>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAppQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create an app
+ */
+export const getCreateAppUrl = () => {
+  return `/api/admin/apps`;
+};
+
+export const createApp = async (
+  createAppRequest: CreateAppRequest,
+  options?: RequestInit,
+): Promise<AppDetail> => {
+  return customFetch<AppDetail>(getCreateAppUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createAppRequest),
+  });
+};
+
+export const getCreateAppMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createApp>>,
+    TError,
+    { data: BodyType<CreateAppRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createApp>>,
+  TError,
+  { data: BodyType<CreateAppRequest> },
+  TContext
+> => {
+  const mutationKey = ["createApp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createApp>>,
+    { data: BodyType<CreateAppRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createApp(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAppMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createApp>>
+>;
+export type CreateAppMutationBody = BodyType<CreateAppRequest>;
+export type CreateAppMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create an app
+ */
+export const useCreateApp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createApp>>,
+    TError,
+    { data: BodyType<CreateAppRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createApp>>,
+  TError,
+  { data: BodyType<CreateAppRequest> },
+  TContext
+> => {
+  return useMutation(getCreateAppMutationOptions(options));
+};
+
+/**
+ * @summary Update an app
+ */
+export const getUpdateAppUrl = (id: number) => {
+  return `/api/admin/apps/${id}`;
+};
+
+export const updateApp = async (
+  id: number,
+  updateAppRequest: UpdateAppRequest,
+  options?: RequestInit,
+): Promise<AppDetail> => {
+  return customFetch<AppDetail>(getUpdateAppUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAppRequest),
+  });
+};
+
+export const getUpdateAppMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateApp>>,
+    TError,
+    { id: number; data: BodyType<UpdateAppRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateApp>>,
+  TError,
+  { id: number; data: BodyType<UpdateAppRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateApp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateApp>>,
+    { id: number; data: BodyType<UpdateAppRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateApp(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAppMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateApp>>
+>;
+export type UpdateAppMutationBody = BodyType<UpdateAppRequest>;
+export type UpdateAppMutationError = ErrorType<void>;
+
+/**
+ * @summary Update an app
+ */
+export const useUpdateApp = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateApp>>,
+    TError,
+    { id: number; data: BodyType<UpdateAppRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateApp>>,
+  TError,
+  { id: number; data: BodyType<UpdateAppRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateAppMutationOptions(options));
+};
+
+/**
+ * @summary Retire an app
+ */
+export const getRetireAppUrl = (id: number) => {
+  return `/api/admin/apps/${id}`;
+};
+
+export const retireApp = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getRetireAppUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRetireAppMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof retireApp>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof retireApp>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["retireApp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof retireApp>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return retireApp(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RetireAppMutationResult = NonNullable<
+  Awaited<ReturnType<typeof retireApp>>
+>;
+
+export type RetireAppMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Retire an app
+ */
+export const useRetireApp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof retireApp>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof retireApp>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getRetireAppMutationOptions(options));
 };

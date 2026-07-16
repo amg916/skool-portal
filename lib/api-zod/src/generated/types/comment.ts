@@ -11,6 +11,8 @@ export interface Comment {
   postId: number;
   authorId: number;
   authorName: string;
+  authorAvatarUrl?: string | null;
   body: string;
+  isBuild: boolean;
   createdAt: Date;
 }

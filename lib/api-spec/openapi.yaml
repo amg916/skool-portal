@@ -26,6 +26,8 @@ tags:
     description: Admin operations
   - name: uploads
     description: File uploads
+  - name: apps
+    description: App catalog
 
 paths:
   /healthz:
@@ -810,8 +812,255 @@ paths:
         "204":
           description: Deleted
 
+  /app-categories:
+    get:
+      operationId: listAppCategories
+      tags: [apps]
+      summary: List app categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppCategory"
+  /apps:
+    get:
+      operationId: listApps
+      tags: [apps]
+      summary: List apps
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: stage
+          in: query
+          schema:
+            type: string
+            enum: [submitted, incubating, graduated, retired, rejected]
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Apps
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppSummary"
+  /apps/{slug}:
+    get:
+      operationId: getApp
+      tags: [apps]
+      summary: Get an app by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: App
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDetail"
+        "404":
+          description: Not found
+  /admin/apps:
+    post:
+      operationId: createApp
+      tags: [apps, admin]
+      summary: Create an app
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAppRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDetail"
+  /admin/apps/{id}:
+    patch:
+      operationId: updateApp
+      tags: [apps, admin]
+      summary: Update an app
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAppRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDetail"
+        "404":
+          description: Not found
+    delete:
+      operationId: retireApp
+      tags: [apps, admin]
+      summary: Retire an app
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Retired
+
 components:
   schemas:
+    AppCategory:
+      type: object
+      required: [id, slug, name, sortOrder]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+
+    AppModule:
+      type: object
+      required: [id, name, sortOrder]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+
+    AppSummary:
+      type: object
+      required: [id, slug, name, categoryId, categorySlug, stage, accessType, isFirstParty]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        tagline:
+          type: string
+          nullable: true
+        categoryId:
+          type: integer
+        categorySlug:
+          type: string
+        iconUrl:
+          type: string
+          nullable: true
+        stage:
+          type: string
+          enum: [submitted, incubating, graduated, retired, rejected]
+        accessType:
+          type: string
+          enum: [link_out, provisioned]
+        isFirstParty:
+          type: boolean
+
+    AppDetail:
+      allOf:
+        - $ref: "#/components/schemas/AppSummary"
+        - type: object
+          properties:
+            description:
+              type: string
+              nullable: true
+            externalUrl:
+              type: string
+              nullable: true
+            screenshots:
+              type: array
+              items:
+                type: string
+            modules:
+              type: array
+              items:
+                $ref: "#/components/schemas/AppModule"
+
+    CreateAppRequest:
+      type: object
+      required: [slug, name, categoryId]
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          pattern: "^[a-z0-9-]+$"
+        name:
+          type: string
+          minLength: 1
+        tagline:
+          type: string
+        description:
+          type: string
+        categoryId:
+          type: integer
+        externalUrl:
+          type: string
+        isFirstParty:
+          type: boolean
+        stage:
+          type: string
+          enum: [submitted, incubating, graduated, retired, rejected]
+        accessType:
+          type: string
+          enum: [link_out, provisioned]
+
+    UpdateAppRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        tagline:
+          type: string
+        description:
+          type: string
+        categoryId:
+          type: integer
+        externalUrl:
+          type: string
+        stage:
+          type: string
+          enum: [submitted, incubating, graduated, retired, rejected]
+
     HealthStatus:
       type: object
       properties:

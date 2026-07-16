@@ -182,7 +182,9 @@ export const ListCommentsResponseItem = zod.object({
   postId: zod.number(),
   authorId: zod.number(),
   authorName: zod.string(),
+  authorAvatarUrl: zod.string().nullish(),
   body: zod.string(),
+  isBuild: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 export const ListCommentsResponse = zod.array(ListCommentsResponseItem);
@@ -537,4 +539,176 @@ export const UploadPdfResponse = zod.object({
  */
 export const DeleteUploadParams = zod.object({
   uploadId: zod.coerce.number(),
+});
+
+/**
+ * @summary List app categories
+ */
+export const ListAppCategoriesResponseItem = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  icon: zod.string().nullish(),
+  sortOrder: zod.number(),
+});
+export const ListAppCategoriesResponse = zod.array(
+  ListAppCategoriesResponseItem,
+);
+
+/**
+ * @summary List apps
+ */
+export const ListAppsQueryParams = zod.object({
+  category: zod.coerce.string().optional(),
+  stage: zod
+    .enum(["submitted", "incubating", "graduated", "retired", "rejected"])
+    .optional(),
+  q: zod.coerce.string().optional(),
+});
+
+export const ListAppsResponseItem = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  name: zod.string(),
+  tagline: zod.string().nullish(),
+  categoryId: zod.number(),
+  categorySlug: zod.string(),
+  iconUrl: zod.string().nullish(),
+  stage: zod.enum([
+    "submitted",
+    "incubating",
+    "graduated",
+    "retired",
+    "rejected",
+  ]),
+  accessType: zod.enum(["link_out", "provisioned"]),
+  isFirstParty: zod.boolean(),
+});
+export const ListAppsResponse = zod.array(ListAppsResponseItem);
+
+/**
+ * @summary Get an app by slug
+ */
+export const GetAppParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const GetAppResponse = zod
+  .object({
+    id: zod.number(),
+    slug: zod.string(),
+    name: zod.string(),
+    tagline: zod.string().nullish(),
+    categoryId: zod.number(),
+    categorySlug: zod.string(),
+    iconUrl: zod.string().nullish(),
+    stage: zod.enum([
+      "submitted",
+      "incubating",
+      "graduated",
+      "retired",
+      "rejected",
+    ]),
+    accessType: zod.enum(["link_out", "provisioned"]),
+    isFirstParty: zod.boolean(),
+  })
+  .and(
+    zod.object({
+      description: zod.string().nullish(),
+      externalUrl: zod.string().nullish(),
+      screenshots: zod.array(zod.string()).optional(),
+      modules: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            name: zod.string(),
+            description: zod.string().nullish(),
+            sortOrder: zod.number(),
+          }),
+        )
+        .optional(),
+    }),
+  );
+
+/**
+ * @summary Create an app
+ */
+
+export const createAppBodySlugRegExp = new RegExp("^[a-z0-9-]+$");
+
+export const CreateAppBody = zod.object({
+  slug: zod.string().min(1).regex(createAppBodySlugRegExp),
+  name: zod.string().min(1),
+  tagline: zod.string().optional(),
+  description: zod.string().optional(),
+  categoryId: zod.number(),
+  externalUrl: zod.string().optional(),
+  isFirstParty: zod.boolean().optional(),
+  stage: zod
+    .enum(["submitted", "incubating", "graduated", "retired", "rejected"])
+    .optional(),
+  accessType: zod.enum(["link_out", "provisioned"]).optional(),
+});
+
+/**
+ * @summary Update an app
+ */
+export const UpdateAppParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateAppBody = zod.object({
+  name: zod.string().optional(),
+  tagline: zod.string().optional(),
+  description: zod.string().optional(),
+  categoryId: zod.number().optional(),
+  externalUrl: zod.string().optional(),
+  stage: zod
+    .enum(["submitted", "incubating", "graduated", "retired", "rejected"])
+    .optional(),
+});
+
+export const UpdateAppResponse = zod
+  .object({
+    id: zod.number(),
+    slug: zod.string(),
+    name: zod.string(),
+    tagline: zod.string().nullish(),
+    categoryId: zod.number(),
+    categorySlug: zod.string(),
+    iconUrl: zod.string().nullish(),
+    stage: zod.enum([
+      "submitted",
+      "incubating",
+      "graduated",
+      "retired",
+      "rejected",
+    ]),
+    accessType: zod.enum(["link_out", "provisioned"]),
+    isFirstParty: zod.boolean(),
+  })
+  .and(
+    zod.object({
+      description: zod.string().nullish(),
+      externalUrl: zod.string().nullish(),
+      screenshots: zod.array(zod.string()).optional(),
+      modules: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            name: zod.string(),
+            description: zod.string().nullish(),
+            sortOrder: zod.number(),
+          }),
+        )
+        .optional(),
+    }),
+  );
+
+/**
+ * @summary Retire an app
+ */
+export const RetireAppParams = zod.object({
+  id: zod.coerce.number(),
 });
