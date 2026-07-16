@@ -31,7 +31,13 @@ const APPS: SeedApp[] = [
     url: "https://omnisend.amgcc.space",
     modules: ["Push", "Email", "Android SMS"],
   },
-  { slug: "command-center", name: "Command Center", category: "admin", tagline: null, url: null },
+  {
+    slug: "command-center",
+    name: "Campus Command Center",
+    category: "admin",
+    tagline: "Automation to-do board that hands builds to the dev team",
+    url: "https://campus.amgcc.space",
+  },
   { slug: "employee-tracker", name: "Employee Tracker", category: "admin", tagline: null, url: null },
   {
     slug: "trackdrive",
@@ -40,20 +46,59 @@ const APPS: SeedApp[] = [
     tagline: "In-house call tracking and routing",
     url: "https://calls.amgcc.space",
   },
+  // Overflow clone: no PM2 process, no directory on prime, no DNS hostname.
+  // It does not exist yet — left unlinked rather than pointed at nothing.
   { slug: "overflow", name: "Overflow", category: "logistics", tagline: null, url: null },
   {
     slug: "kingdom",
     name: "Kingdom",
     category: "marketing",
-    tagline: null,
-    url: null,
+    tagline: "Ecommerce empire dashboard",
+    url: "https://kingdom.amgcc.space",
     modules: ["Funnel Jacker"],
   },
+  // content-studio-v2 is running on prime (:3110) but has NO tunnel route or
+  // DNS hostname — it is not publicly reachable, so it gets no link.
   { slug: "content-studio", name: "Content Studio", category: "marketing", tagline: null, url: null },
   { slug: "freegaime", name: "Freegaime", category: "marketing", tagline: null, url: null },
   { slug: "patent-searcher", name: "Patent Searcher", category: "admin", tagline: null, url: null },
   { slug: "quickbooks", name: "QuickBooks", category: "admin", tagline: null, url: null },
-  { slug: "unibox", name: "Unibox", category: "marketing", tagline: null, url: null },
+  {
+    slug: "unibox",
+    name: "Unibox",
+    category: "marketing",
+    tagline: "One inbox across every email account, sorted your way",
+    url: "https://inbox.amgcc.space",
+  },
+  {
+    slug: "push-platform",
+    name: "Push Platform",
+    category: "marketing",
+    tagline: "Web push notification campaigns and subscriber management",
+    url: "https://push.amgcc.space",
+  },
+  {
+    slug: "textbee",
+    name: "TextBee",
+    category: "marketing",
+    tagline: "Android phone as an SMS gateway, with webhooks",
+    url: "https://textbee.amgcc.space",
+    modules: ["Dashboard", "REST API"],
+  },
+  {
+    slug: "leadprosper",
+    name: "Lead Prosper",
+    category: "tracking",
+    tagline: "In-house lead distribution and buyer routing",
+    url: "https://leadprosper.amgcc.space",
+  },
+  {
+    slug: "master-crm",
+    name: "Master CRM",
+    category: "admin",
+    tagline: "Cross-brand customer records and order history",
+    url: "https://crm.amgcc.space",
+  },
 
   // Live AMG apps found across the devteam board, CLAUDE.md and prime. Every URL
   // below returned 200 when seeded. Deliberately excluded: one-off ops errands

@@ -10,12 +10,23 @@ import {
  * Whisper transcription pipeline for a finished CF Stream recording.
  *
  * Flow:
- *   1. Fetch the CF Stream MP4 download (audio + video — OpenAI handles both).
- *   2. POST multipart/form-data to OpenAI's transcription endpoint
- *      (model: whisper-1, response_format: text — keeps it simple + cheap).
+ *   1. Fetch the CF Stream MP4 download (audio + video — Whisper handles both).
+ *   2. POST multipart/form-data to an OpenAI-compatible transcription endpoint
+ *      (base URL from env — OpenAI today, or a self-hosted NVIDIA Whisper NIM /
+ *      any OpenAI-compatible ASR by pointing TRANSCRIBE_BASE_URL at it).
  *   3. Save transcript onto the recording row.
- *   4. Best-effort: generate a 6-word title hint + comma-separated tag hints
- *      via the Anthropic API for nicer post defaults.
+ *   4. Best-effort: generate comma-separated tag hints via the Claude
+ *      subscription fleet (the fleet-gateway, not the paid API) for nicer
+ *      post defaults.
+ *
+ * Provider routing (see the two helpers below):
+ *   - Audio→text: OpenAI-compatible REST, base URL configurable. NVIDIA's FREE
+ *     *hosted* Whisper (build.nvidia.com) is gRPC-only (grpc.nvcf.nvidia.com)
+ *     and wants mono 16k WAV, so it can't be a drop-in here — but a self-hosted
+ *     NVIDIA Whisper NIM exposes the standard /v1/audio/transcriptions REST and
+ *     works by setting TRANSCRIBE_BASE_URL + TRANSCRIBE_API_KEY.
+ *   - Tag hint: routed to the subscription fleet via FLEET_GATEWAY_URL, so it
+ *     bills the Max plan, not the Anthropic API.
  *
  * NEVER throws — failures are logged + the row gets `errorMessage` populated.
  * The webhook handler kicks this fire-and-forget; we own all error handling.
@@ -37,9 +48,22 @@ export async function kickTranscriptionAsync(recordingId: number): Promise<void>
       return;
     }
 
-    const openaiKey = process.env["OPENAI_API_KEY"];
-    if (!openaiKey) {
-      console.warn("[transcribe] OPENAI_API_KEY unset; skipping");
+    // Audio→text provider is chosen by env so we can move off the paid OpenAI
+    // API without a code change. Defaults preserve the previous OpenAI behavior.
+    // Point TRANSCRIBE_BASE_URL at a self-hosted NVIDIA Whisper NIM (or any
+    // OpenAI-compatible ASR) to use that instead.
+    const asrBaseUrl = (
+      process.env["TRANSCRIBE_BASE_URL"] || "https://api.openai.com/v1"
+    ).replace(/\/+$/, "");
+    const asrKey =
+      process.env["TRANSCRIBE_API_KEY"] ||
+      process.env["NVIDIA_API_KEY"] ||
+      process.env["OPENAI_API_KEY"];
+    const asrModel = process.env["TRANSCRIBE_MODEL"] || "whisper-1";
+    if (!asrKey) {
+      console.warn(
+        "[transcribe] no ASR key (TRANSCRIBE_API_KEY / NVIDIA_API_KEY / OPENAI_API_KEY); skipping",
+      );
       return;
     }
 
@@ -94,28 +118,28 @@ export async function kickTranscriptionAsync(recordingId: number): Promise<void>
     const audioBuf = Buffer.from(ab);
     console.log("[transcribe] MP4 fetched", audioBuf.length, "bytes");
 
-    // POST to OpenAI Whisper.
+    // POST to the OpenAI-compatible transcription endpoint.
     const form = new FormData();
     form.append(
       "file",
       new Blob([new Uint8Array(audioBuf)], { type: "video/mp4" }),
       `banger-${rec.streamUid}.mp4`,
     );
-    form.append("model", "whisper-1");
+    form.append("model", asrModel);
     form.append("response_format", "text");
 
-    const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    const r = await fetch(`${asrBaseUrl}/audio/transcriptions`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${openaiKey}` },
+      headers: { Authorization: `Bearer ${asrKey}` },
       body: form,
     });
     if (!r.ok) {
       const text = await r.text();
-      console.error("[transcribe] OpenAI error", r.status, text.slice(0, 400));
+      console.error("[transcribe] ASR error", r.status, text.slice(0, 400));
       await db
         .update(recordingsTable)
         .set({
-          errorMessage: `Transcription failed: OpenAI ${r.status}`,
+          errorMessage: `Transcription failed: ASR ${r.status}`,
         })
         .where(eq(recordingsTable.id, recordingId));
       return;
@@ -163,18 +187,22 @@ export async function kickTranscriptionAsync(recordingId: number): Promise<void>
   }
 }
 
+// Routed through the subscription fleet (fleet-gateway), NOT the paid Anthropic
+// API. The gateway speaks the Anthropic Messages wire shape but runs `claude -p`
+// on the Max plan, so this billed the API before and now bills the subscription.
+// If the gateway isn't configured we skip tags rather than fall back to the API.
 async function suggestTagsViaClaude(transcript: string): Promise<string | null> {
-  const key = process.env["ANTHROPIC_API_KEY"];
-  if (!key) return null;
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+  const gatewayUrl = process.env["FLEET_GATEWAY_URL"];
+  const gatewayToken = process.env["FLEET_GATEWAY_TOKEN"];
+  if (!gatewayUrl || !gatewayToken) return null;
+  const r = await fetch(`${gatewayUrl.replace(/\/+$/, "")}/v1/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
+      Authorization: `Bearer ${gatewayToken}`,
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-7-20250929",
+      model: process.env["FLEET_TAG_MODEL"] || "claude-sonnet-4-6",
       max_tokens: 80,
       messages: [
         {
