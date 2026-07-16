@@ -418,8 +418,25 @@ export function RecordButton({
     const canvasStream = (canvas as HTMLCanvasElement).captureStream(30);
     const finalStream = new MediaStream();
     canvasStream.getVideoTracks().forEach((t) => finalStream.addTrack(t));
-    camStream.getAudioTracks().forEach((t) => finalStream.addTrack(t));
-    screenStream.getAudioTracks().forEach((t) => finalStream.addTrack(t));
+
+    // Mix all audio tracks via AudioContext so MediaRecorder receives a single
+    // merged audio track. Adding multiple raw tracks to a MediaStream silently
+    // drops all but the first in most browsers.
+    const allAudioTracks = [
+      ...camStream.getAudioTracks(),
+      ...screenStream.getAudioTracks(),
+    ];
+    if (allAudioTracks.length === 1) {
+      finalStream.addTrack(allAudioTracks[0]!);
+    } else if (allAudioTracks.length > 1) {
+      const audioCtx = new AudioContext();
+      const dest = audioCtx.createMediaStreamDestination();
+      allAudioTracks.forEach((track) => {
+        const src = audioCtx.createMediaStreamSource(new MediaStream([track]));
+        src.connect(dest);
+      });
+      dest.stream.getAudioTracks().forEach((t) => finalStream.addTrack(t));
+    }
     return finalStream;
   }
 
