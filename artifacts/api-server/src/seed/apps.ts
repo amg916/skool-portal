@@ -54,6 +54,110 @@ const APPS: SeedApp[] = [
   { slug: "patent-searcher", name: "Patent Searcher", category: "admin", tagline: null, url: null },
   { slug: "quickbooks", name: "QuickBooks", category: "admin", tagline: null, url: null },
   { slug: "unibox", name: "Unibox", category: "marketing", tagline: null, url: null },
+
+  // Live AMG apps found across the devteam board, CLAUDE.md and prime. Every URL
+  // below returned 200 when seeded. Deliberately excluded: one-off ops errands
+  // that happen to have a URL ("cancel my mids", "reapply for Utah licensing"),
+  // and anything not currently up — malibu-sms.amgcc.space (502) and
+  // affiliate-brain.amgcc.space (does not resolve).
+  {
+    slug: "truinvoice",
+    name: "TruInvoice",
+    category: "admin",
+    tagline: "Generate branded invoices and payment links on demand",
+    url: "https://truinvoice.amgcc.space",
+  },
+  {
+    slug: "warmly",
+    name: "Warmly",
+    category: "marketing",
+    tagline: "Inbox warming and deliverability monitoring",
+    url: "https://warmly.amgcc.space",
+  },
+  {
+    slug: "sic",
+    name: "SIC",
+    category: "tracking",
+    tagline: "Daily SEC filing ingest and toxic-stock screening",
+    url: "https://sic.amgcc.space",
+  },
+  {
+    slug: "tg-ops",
+    name: "TG Ops",
+    category: "admin",
+    tagline: "See, pause and edit every Telegram automation in one place",
+    url: "https://tg-ops.amgcc.space",
+  },
+  {
+    slug: "b2b",
+    name: "B2B Email",
+    category: "marketing",
+    tagline: "B2B outreach sending and list management",
+    url: "https://b2b.amgcc.space",
+  },
+  {
+    slug: "cashpro-returns",
+    name: "CashPro Returns",
+    category: "admin",
+    tagline: "Pull Bank of America return transactions into ACH Pro",
+    url: "https://cashpro-returns.amgcc.space",
+  },
+  {
+    slug: "leadforms",
+    name: "Leadforms",
+    category: "marketing",
+    tagline: "Run Facebook lead forms against affiliate offers",
+    url: "https://leadforms.amgcc.space",
+  },
+  {
+    slug: "mcopulse",
+    name: "MCO Pulse",
+    category: "marketing",
+    tagline: "Daily email blast scheduling and delivery checks",
+    url: "https://mcopulse.amgcc.space",
+  },
+  {
+    slug: "olivia",
+    name: "Olivia",
+    category: "marketing",
+    tagline: "Unified Messenger and Instagram inbox for campaigns",
+    url: "https://olivia.amgcc.space",
+  },
+  {
+    slug: "ach-pro",
+    name: "ACH Pro",
+    category: "admin",
+    tagline: "Bank of America CashPro ACH refund manager",
+    url: "https://ach-pro.amgcc.space",
+  },
+  {
+    slug: "amazon-command-center",
+    name: "Amazon Command Center",
+    category: "tracking",
+    tagline: "Seller, ads and inventory dashboards across every brand",
+    url: "https://amazon.amgcc.space",
+  },
+  {
+    slug: "ecom-hub",
+    name: "Ecom Hub",
+    category: "admin",
+    tagline: "Cross-store ecommerce overview",
+    url: "https://ecom.amgcc.space",
+  },
+  {
+    slug: "funnel-forge",
+    name: "Funnel Forge",
+    category: "marketing",
+    tagline: "Mix-and-match funnel pages with live checkout",
+    url: "https://forge.amgcc.space",
+  },
+  {
+    slug: "amg-campus",
+    name: "AMG Campus",
+    category: "admin",
+    tagline: "Automation to-do board that hands builds to the dev team",
+    url: "https://devteam.amgcc.space",
+  },
 ];
 
 export async function seedApps() {
