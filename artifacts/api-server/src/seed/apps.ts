@@ -1,5 +1,5 @@
 import { db, appCategoriesTable, appsTable, appModulesTable, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and, notInArray } from "drizzle-orm";
 
 // Explore is deliberately NOT a category — it is a browse surface. A category
 // named Explore swallows apps and makes them unfindable.
@@ -138,20 +138,6 @@ const APPS: SeedApp[] = [
     url: "https://warmly.amgcc.space",
   },
   {
-    slug: "sic",
-    name: "SIC",
-    category: "tracking",
-    tagline: "Daily SEC filing ingest and toxic-stock screening",
-    url: "https://sic.amgcc.space",
-  },
-  {
-    slug: "tg-ops",
-    name: "TG Ops",
-    category: "admin",
-    tagline: "See, pause and edit every Telegram automation in one place",
-    url: "https://tg-ops.amgcc.space",
-  },
-  {
     slug: "b2b",
     name: "B2B Email",
     category: "marketing",
@@ -185,27 +171,6 @@ const APPS: SeedApp[] = [
     category: "marketing",
     tagline: "Unified Messenger and Instagram inbox for campaigns",
     url: "https://olivia.amgcc.space",
-  },
-  {
-    slug: "ach-pro",
-    name: "ACH Pro",
-    category: "admin",
-    tagline: "Bank of America CashPro ACH refund manager",
-    url: "https://ach-pro.amgcc.space",
-  },
-  {
-    slug: "amazon-command-center",
-    name: "Amazon Command Center",
-    category: "tracking",
-    tagline: "Seller, ads and inventory dashboards across every brand",
-    url: "https://amazon.amgcc.space",
-  },
-  {
-    slug: "ecom-hub",
-    name: "Ecom Hub",
-    category: "admin",
-    tagline: "Cross-store ecommerce overview",
-    url: "https://ecom.amgcc.space",
   },
   {
     slug: "funnel-forge",
@@ -301,6 +266,20 @@ export async function seedApps() {
         .insert(appModulesTable)
         .values(a.modules.map((name, i) => ({ appId: row!.id, name, sortOrder: i })));
     }
+  }
+
+  // Reconcile: this seed is the single source of truth for the first-party
+  // catalog. Any first-party app whose slug is no longer listed above is a
+  // deliberate removal (e.g. internal-only ops tools pulled from the hub), so
+  // delete it. Modules cascade. User-submitted apps (is_first_party = false)
+  // are never touched.
+  const keepSlugs = APPS.map((a) => a.slug);
+  const removed = await db
+    .delete(appsTable)
+    .where(and(eq(appsTable.isFirstParty, true), notInArray(appsTable.slug, keepSlugs)))
+    .returning({ slug: appsTable.slug });
+  if (removed.length) {
+    console.log(`Removed ${removed.length} delisted apps: ${removed.map((r) => r.slug).join(", ")}`);
   }
 
   console.log(`Seeded ${CATEGORIES.length} categories and ${APPS.length} apps`);
