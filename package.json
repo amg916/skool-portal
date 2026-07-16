@@ -12,6 +12,7 @@
   },
   "private": true,
   "devDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.62.2",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
     "vitest": "^4.1.10"
