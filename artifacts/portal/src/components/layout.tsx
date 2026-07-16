@@ -25,6 +25,7 @@ import { useChat } from "@/lib/chat-context";
 import { useQuery } from "@tanstack/react-query";
 
 const SUB_NAV = [
+  { href: "/apps", label: "Apps" },
   { href: "/community", label: "Community" },
   { href: "/school", label: "Classroom" },
   { href: "/calendar", label: "Calendar" },
