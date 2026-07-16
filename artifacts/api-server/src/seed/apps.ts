@@ -38,7 +38,13 @@ const APPS: SeedApp[] = [
     tagline: "Automation to-do board that hands builds to the dev team",
     url: "https://campus.amgcc.space",
   },
-  { slug: "employee-tracker", name: "Employee Tracker", category: "admin", tagline: null, url: null },
+  {
+    slug: "employee-tracker",
+    name: "Beacon — Employee Tracker",
+    category: "admin",
+    tagline: "Track team activity and hours",
+    url: "https://employeetracker.org",
+  },
   {
     slug: "trackdrive",
     name: "TrackDrive",
@@ -57,12 +63,24 @@ const APPS: SeedApp[] = [
     url: "https://kingdom.amgcc.space",
     modules: ["Funnel Jacker"],
   },
-  // content-studio-v2 is running on prime (:3110) but has NO tunnel route or
-  // DNS hostname — it is not publicly reachable, so it gets no link.
-  { slug: "content-studio", name: "Content Studio", category: "marketing", tagline: null, url: null },
+  {
+    slug: "content-studio",
+    name: "Content Studio",
+    category: "marketing",
+    tagline: "Brand content generation",
+    // Was running headless on prime :3110 with no tunnel route or DNS until
+    // 2026-07-16; studio.amgcc.space now points at it.
+    url: "https://studio.amgcc.space",
+  },
   { slug: "freegaime", name: "Freegaime", category: "marketing", tagline: null, url: null },
   { slug: "patent-searcher", name: "Patent Searcher", category: "admin", tagline: null, url: null },
-  { slug: "quickbooks", name: "QuickBooks", category: "admin", tagline: null, url: null },
+  {
+    slug: "quickbooks",
+    name: "AMG Unified Accounting",
+    category: "admin",
+    tagline: "Every bank account across every entity, in one ledger",
+    url: "https://books.amgcc.space",
+  },
   {
     slug: "unibox",
     name: "Unibox",
@@ -202,6 +220,31 @@ const APPS: SeedApp[] = [
     category: "admin",
     tagline: "Automation to-do board that hands builds to the dev team",
     url: "https://devteam.amgcc.space",
+  },
+
+  // Named directly by Daniel as the apps that matter. All verified 200.
+  {
+    slug: "stint",
+    name: "Stint",
+    category: "tracking",
+    tagline: "Affiliate tracking platform — offers, partners and postbacks",
+    url: "https://stint.cc",
+  },
+  {
+    slug: "all-customer-service",
+    name: "All Customer Service",
+    category: "admin",
+    tagline: "Billing help, cancellations and refunds desk",
+    url: "https://allcustomerservice.com",
+  },
+  {
+    slug: "accountant",
+    name: "MortgageCo Accounting",
+    category: "admin",
+    tagline: "Revenue, spend and P&L for MortgageCo",
+    // NOT the Replit URL the Consumerizer used — mortgageco-accountant.replit.app
+    // is dead ("This app isn't live yet"). This is the live one on prime.
+    url: "https://accounting.amgcc.space",
   },
 ];
 
