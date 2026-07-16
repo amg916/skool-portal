@@ -16,6 +16,11 @@ history, `/apps` browse, `/apps/:slug` detail, admin CRUD, seed.
 reviews, per-app video, GHL. The `stage` column ships now because it is
 structural, but nothing writes anything except `graduated` in this spec.
 
+**Context:** the production DB holds 6 users and 7 posts (see parent spec). There
+is no live data to preserve, so this spec restructures directly and skips
+backward-compatibility work. Existing community tables are left alone here only
+because they are out of scope — not because they are load-bearing.
+
 ## Success criteria
 
 1. `baingers.com/apps` lists every seeded first-party app, filterable by category.

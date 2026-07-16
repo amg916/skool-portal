@@ -10,6 +10,31 @@ categorized catalog of Alpha Marketing Group's apps, open to user-submitted apps
 that earn their way in via community votes, with ratings, comments, and
 first-party walkthrough video on every app.
 
+Name stays: **Baingers** = "B-*ai*-ngers" — banger AI apps. The pun carries over
+to the catalog intact. Build in place; no fork, no new domain.
+
+## Current state — this is a prototype, not a live community
+
+Measured on prime 2026-07-16:
+
+| users | posts | recordings | comments | lessons | DMs | reactions |
+|---|---|---|---|---|---|---|
+| 6 | 7 | 15 | 1 | 2 | 2 | 1 |
+
+Signups: 5 in May 2026, 1 in July. **There is no audience to disrupt and no
+brand equity to protect.** This is the decisive context for everything below:
+
+- We restructure aggressively rather than bolting columns onto live tables.
+  Defensive compatibility work is unwarranted — there is no data to preserve.
+- Installing migration history now costs nothing. Post-launch it is the
+  difference between a rollback and a data-loss incident. **Now is the cheapest
+  this fix will ever be.**
+- The value being reused is the **codebase**, not the community: the
+  record → Cloudflare Stream → Whisper → Claude-tagging pipeline (15 recordings
+  prove it works), Google OAuth + sessions, comments/reactions/bookmarks, DMs,
+  the `suggestion_votes` voting pattern, and the whole deploy stack. Roughly 70%
+  of the target product already exists. The catalog is the only new machinery.
+
 ## Product shape
 
 Two tiers, one entity:
@@ -83,6 +108,11 @@ Unibox. Category assignment and canonical URLs TBD with Daniel at seed time.
 | 5 | **GHL entitlements** | Only piece with an external dependency and a monthly bill |
 
 Each gets its own spec → plan → implementation cycle.
+
+Spec 4 also absorbs **School → per-app training**: `segments`/`subsections`/
+`lessons` become courses attached to an app, rather than an orphaned section
+next to the catalog. Only 2 lessons exist, so this is a repurpose, not a
+migration.
 
 ## GHL integration (Spec 5 preview)
 
