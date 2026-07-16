@@ -5,6 +5,7 @@ import {
   appCategoriesTable,
   appModulesTable,
   type AppStage,
+  type AppAccessType,
 } from "@workspace/db";
 
 export type AppSummary = {
@@ -90,6 +91,41 @@ export async function getAppBySlug(slug: string): Promise<AppDetail | null> {
     .orderBy(asc(appModulesTable.sortOrder));
 
   return { ...row, modules };
+}
+
+export type CreateAppInput = {
+  slug: string;
+  name: string;
+  tagline?: string;
+  description?: string;
+  categoryId: number;
+  ownerId: number;
+  externalUrl?: string;
+  isFirstParty?: boolean;
+  stage?: AppStage;
+  accessType?: AppAccessType;
+};
+
+export async function createApp(input: CreateAppInput): Promise<AppDetail | null> {
+  const [row] = await db.insert(appsTable).values(input).returning({ slug: appsTable.slug });
+  return row ? getAppBySlug(row.slug) : null;
+}
+
+export type UpdateAppInput = Partial<
+  Pick<CreateAppInput, "name" | "tagline" | "description" | "categoryId" | "externalUrl" | "stage">
+>;
+
+export async function updateApp(id: number, input: UpdateAppInput): Promise<AppDetail | null> {
+  const patch: Record<string, unknown> = { updatedAt: new Date() };
+  for (const [k, v] of Object.entries(input)) {
+    if (v !== undefined) patch[k] = v;
+  }
+  const [row] = await db
+    .update(appsTable)
+    .set(patch)
+    .where(eq(appsTable.id, id))
+    .returning({ slug: appsTable.slug });
+  return row ? getAppBySlug(row.slug) : null;
 }
 
 /** Apps are never hard-deleted — comments, ratings and videos will hang off them. */

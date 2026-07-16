@@ -15,7 +15,14 @@ async function buildAll() {
   await rm(distDir, { recursive: true, force: true });
 
   await esbuild({
-    entryPoints: [path.resolve(artifactDir, "src/index.ts")],
+    // Seeds are bundled as their own entry points: node's native type-stripping
+    // cannot resolve this workspace's directory imports (e.g. "./schema"), so a
+    // seed run straight from src/ fails. Bundling is what makes `pnpm seed` work.
+    entryPoints: [
+      path.resolve(artifactDir, "src/index.ts"),
+      path.resolve(artifactDir, "src/seed.ts"),
+      path.resolve(artifactDir, "src/seed/apps.ts"),
+    ],
     platform: "node",
     bundle: true,
     format: "esm",
