@@ -666,6 +666,14 @@ export const GetAppResponse = zod
           }),
         )
         .optional(),
+      myEntitlement: zod
+        .object({
+          id: zod.number().optional(),
+          provider: zod.string().optional(),
+          externalId: zod.string().nullish(),
+          status: zod.enum(["pending", "active", "paused", "cancelled"]),
+        })
+        .optional(),
     }),
   );
 
@@ -773,6 +781,14 @@ export const UpdateAppResponse = zod
             transcript: zod.string().nullish(),
           }),
         )
+        .optional(),
+      myEntitlement: zod
+        .object({
+          id: zod.number().optional(),
+          provider: zod.string().optional(),
+          externalId: zod.string().nullish(),
+          status: zod.enum(["pending", "active", "paused", "cancelled"]),
+        })
         .optional(),
     }),
   );
@@ -907,6 +923,14 @@ export const SetAppStageResponse = zod
           }),
         )
         .optional(),
+      myEntitlement: zod
+        .object({
+          id: zod.number().optional(),
+          provider: zod.string().optional(),
+          externalId: zod.string().nullish(),
+          status: zod.enum(["pending", "active", "paused", "cancelled"]),
+        })
+        .optional(),
     }),
   );
 
@@ -962,4 +986,11 @@ export const AttachAppVideoBody = zod.object({
 export const DetachAppVideoParams = zod.object({
   id: zod.coerce.number(),
   videoId: zod.coerce.number(),
+});
+
+/**
+ * @summary Record intent to provision a provisioned app (GHL owns the card + billing)
+ */
+export const StartEntitlementParams = zod.object({
+  id: zod.coerce.number(),
 });

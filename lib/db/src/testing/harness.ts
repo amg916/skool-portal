@@ -23,6 +23,6 @@ export const testDb = drizzle(testPool, { schema });
 
 export async function truncateAll() {
   await testDb.execute(sql`
-    truncate table app_videos, app_ratings, app_votes, app_modules, apps, app_categories, recordings, users restart identity cascade
+    truncate table app_entitlements, app_videos, app_ratings, app_votes, app_modules, apps, app_categories, recordings, users restart identity cascade
   `);
 }

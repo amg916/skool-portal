@@ -10,6 +10,7 @@ import {
 import { submitApp, voteApp, unvoteApp, setStage } from "../storage/incubator.js";
 import { rateApp, unrateApp } from "../storage/ratings.js";
 import { attachVideo, detachVideo } from "../storage/appVideos.js";
+import { startEntitlement } from "../storage/entitlements.js";
 import { listAppCategories } from "../storage/appCategories.js";
 import { requireAuth, requireAdmin } from "../middlewares/auth.js";
 import { validateBody } from "../validate.js";
@@ -111,6 +112,16 @@ router.delete("/admin/apps/:id/videos/:videoId", requireAuth, requireAdmin, asyn
   }
   await detachVideo(id, videoId);
   res.status(204).send();
+});
+
+// Records intent to provision (GHL then owns the card + billing entirely).
+router.post("/apps/:id/entitlement", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  res.status(201).json(await startEntitlement(id, req.user!.id));
 });
 
 router.get("/apps/:slug", requireAuth, async (req, res) => {

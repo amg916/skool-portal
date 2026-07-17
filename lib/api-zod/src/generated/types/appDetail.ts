@@ -5,6 +5,7 @@
  * Community & School Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { AppEntitlement } from "./appEntitlement";
 import type { AppModule } from "./appModule";
 import type { AppReview } from "./appReview";
 import type { AppSummary } from "./appSummary";
@@ -17,4 +18,5 @@ export type AppDetail = AppSummary & {
   modules?: AppModule[];
   reviews?: AppReview[];
   videos?: AppVideo[];
+  myEntitlement?: AppEntitlement;
 };

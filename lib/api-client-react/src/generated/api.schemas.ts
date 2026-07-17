@@ -85,6 +85,23 @@ export interface AttachVideoRequest {
   title?: string;
 }
 
+export type AppEntitlementStatus =
+  (typeof AppEntitlementStatus)[keyof typeof AppEntitlementStatus];
+
+export const AppEntitlementStatus = {
+  pending: "pending",
+  active: "active",
+  paused: "paused",
+  cancelled: "cancelled",
+} as const;
+
+export interface AppEntitlement {
+  id?: number;
+  provider?: string;
+  externalId?: string | null;
+  status: AppEntitlementStatus;
+}
+
 export interface AppCategory {
   id: number;
   slug: string;
@@ -145,6 +162,7 @@ export type AppDetail = AppSummary & {
   modules?: AppModule[];
   reviews?: AppReview[];
   videos?: AppVideo[];
+  myEntitlement?: AppEntitlement;
 };
 
 export type CreateAppRequestStage =

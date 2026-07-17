@@ -1101,6 +1101,23 @@ paths:
           schema: { type: integer }
       responses:
         "204": { description: Detached }
+  /apps/{id}/entitlement:
+    post:
+      operationId: startEntitlement
+      tags: [apps]
+      summary: Record intent to provision a provisioned app (GHL owns the card + billing)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "201":
+          description: Entitlement started (pending until the provider confirms)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppEntitlement"
 components:
   schemas:
     SubmitAppRequest:
@@ -1167,6 +1184,15 @@ components:
         recordingId: { type: integer }
         role: { type: string, enum: [walkthrough, demo, changelog] }
         title: { type: string }
+
+    AppEntitlement:
+      type: object
+      required: [status]
+      properties:
+        id: { type: integer }
+        provider: { type: string }
+        externalId: { type: string, nullable: true }
+        status: { type: string, enum: [pending, active, paused, cancelled] }
 
     AppCategory:
       type: object
@@ -1269,6 +1295,8 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/AppVideo"
+            myEntitlement:
+              $ref: "#/components/schemas/AppEntitlement"
 
     CreateAppRequest:
       type: object

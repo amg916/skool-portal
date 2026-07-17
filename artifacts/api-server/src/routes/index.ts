@@ -24,6 +24,7 @@ import suggestionsRouter from "./suggestions.js";
 import githubReposRouter from "./githubRepos.js";
 import recordingsRouter from "./recordings.js";
 import appsRouter from "./apps.js";
+import ghlWebhookRouter from "./ghlWebhook.js";
 
 const router: IRouter = Router();
 
@@ -50,6 +51,7 @@ router.use(bookmarksRouter);
 router.use(reactionsRouter);
 router.use(suggestionsRouter);
 router.use(appsRouter);
+router.use(ghlWebhookRouter);
 router.use(githubReposRouter);
 router.use(recordingsRouter);
 

@@ -20,6 +20,7 @@ import type {
   AdminProgressRow,
   AppCategory,
   AppDetail,
+  AppEntitlement,
   AppSummary,
   AttachVideoRequest,
   ChangePasswordRequest,
@@ -4838,4 +4839,88 @@ export const useDetachAppVideo = <
   TContext
 > => {
   return useMutation(getDetachAppVideoMutationOptions(options));
+};
+
+/**
+ * @summary Record intent to provision a provisioned app (GHL owns the card + billing)
+ */
+export const getStartEntitlementUrl = (id: number) => {
+  return `/api/apps/${id}/entitlement`;
+};
+
+export const startEntitlement = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AppEntitlement> => {
+  return customFetch<AppEntitlement>(getStartEntitlementUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getStartEntitlementMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startEntitlement>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startEntitlement>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["startEntitlement"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startEntitlement>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return startEntitlement(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartEntitlementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startEntitlement>>
+>;
+
+export type StartEntitlementMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Record intent to provision a provisioned app (GHL owns the card + billing)
+ */
+export const useStartEntitlement = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startEntitlement>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof startEntitlement>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getStartEntitlementMutationOptions(options));
 };

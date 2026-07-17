@@ -8,6 +8,7 @@ import { ModuleList } from "@/components/apps/module-list";
 import { VoteButton } from "@/components/apps/vote-button";
 import { RatingPanel } from "@/components/apps/rating-panel";
 import { AppVideos } from "@/components/apps/app-videos";
+import { EntitlementCta } from "@/components/apps/entitlement-cta";
 import { useToast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
 
@@ -77,14 +78,25 @@ export default function AppDetailPage() {
         </div>
       </div>
 
-      {/* CTA is hidden until a real URL exists — an unfilled entry must not ship a dead link. */}
-      {app.externalUrl && (
-        <Button asChild size="lg" className="gap-2">
-          <a href={app.externalUrl} target="_blank" rel="noopener noreferrer">
-            Open {app.name}
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        </Button>
+      {/* Provisioned apps (GHL) get the free-account flow — the card is entered on
+          the provider's site, never here. Everything else is a plain link-out,
+          hidden until a real URL exists so an unfilled entry never ships a dead link. */}
+      {app.accessType === "provisioned" ? (
+        <EntitlementCta
+          appId={app.id}
+          appName={app.name}
+          signupUrl={app.externalUrl ?? null}
+          entitlement={app.myEntitlement ?? null}
+        />
+      ) : (
+        app.externalUrl && (
+          <Button asChild size="lg" className="gap-2">
+            <a href={app.externalUrl} target="_blank" rel="noopener noreferrer">
+              Open {app.name}
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </Button>
+        )
       )}
 
       {/* Admin moderation: promote through the Incubator, or reject. */}

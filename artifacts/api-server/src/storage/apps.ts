@@ -11,6 +11,8 @@ import {
 } from "@workspace/db";
 import { ratingAggregate, listReviews, type AppReview } from "./ratings.js";
 import { listAppVideos, type AppVideoView } from "./appVideos.js";
+import { getEntitlement } from "./entitlements.js";
+import type { AppEntitlement } from "@workspace/db";
 
 export type AppSummary = {
   id: number;
@@ -44,6 +46,7 @@ export type AppDetail = AppSummary & {
   modules: AppModuleView[];
   reviews?: AppReview[];
   videos?: AppVideoView[];
+  myEntitlement?: AppEntitlement | null;
 };
 
 const summaryCols = {
@@ -153,6 +156,9 @@ export async function getAppBySlug(slug: string, viewerId?: number): Promise<App
   const rating = await ratingAggregate(row.id, viewerId);
   const reviews = row.stage === "graduated" ? await listReviews(row.id) : [];
   const videos = await listAppVideos(row.id);
+  // Entitlements only exist for provisioned apps (GHL). link_out apps have none.
+  const myEntitlement =
+    row.accessType === "provisioned" && viewerId ? await getEntitlement(row.id, viewerId) : null;
 
   return {
     ...row,
@@ -161,6 +167,7 @@ export async function getAppBySlug(slug: string, viewerId?: number): Promise<App
     ...rating,
     reviews,
     videos,
+    myEntitlement,
     modules,
   };
 }
