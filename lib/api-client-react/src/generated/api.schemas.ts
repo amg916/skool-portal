@@ -49,6 +49,42 @@ export interface RateAppRequest {
   review?: string;
 }
 
+export type AppVideoRole = (typeof AppVideoRole)[keyof typeof AppVideoRole];
+
+export const AppVideoRole = {
+  walkthrough: "walkthrough",
+  demo: "demo",
+  changelog: "changelog",
+} as const;
+
+export interface AppVideo {
+  id: number;
+  recordingId: number;
+  role: AppVideoRole;
+  title?: string | null;
+  sortOrder?: number;
+  streamUid?: string | null;
+  embedUrl?: string | null;
+  thumbnailUrl?: string | null;
+  durationSec?: number | null;
+  transcript?: string | null;
+}
+
+export type AttachVideoRequestRole =
+  (typeof AttachVideoRequestRole)[keyof typeof AttachVideoRequestRole];
+
+export const AttachVideoRequestRole = {
+  walkthrough: "walkthrough",
+  demo: "demo",
+  changelog: "changelog",
+} as const;
+
+export interface AttachVideoRequest {
+  recordingId: number;
+  role?: AttachVideoRequestRole;
+  title?: string;
+}
+
 export interface AppCategory {
   id: number;
   slug: string;
@@ -108,6 +144,7 @@ export type AppDetail = AppSummary & {
   screenshots?: string[];
   modules?: AppModule[];
   reviews?: AppReview[];
+  videos?: AppVideo[];
 };
 
 export type CreateAppRequestStage =

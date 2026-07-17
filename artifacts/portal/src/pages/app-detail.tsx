@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ModuleList } from "@/components/apps/module-list";
 import { VoteButton } from "@/components/apps/vote-button";
 import { RatingPanel } from "@/components/apps/rating-panel";
+import { AppVideos } from "@/components/apps/app-videos";
 import { useToast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
 
@@ -123,6 +124,8 @@ export default function AppDetailPage() {
       )}
 
       {app.description && <p className="whitespace-pre-wrap leading-relaxed">{app.description}</p>}
+
+      <AppVideos appId={app.id} videos={app.videos ?? []} isAdmin={isAdmin} />
 
       {/* Ratings are catalog-only — incubator apps are voted on, not rated. */}
       {isGraduated && (

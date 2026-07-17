@@ -5,13 +5,15 @@ import {
   createApp,
   updateApp,
   retireApp,
+  getAppBySlugById,
 } from "../storage/apps.js";
 import { submitApp, voteApp, unvoteApp, setStage } from "../storage/incubator.js";
 import { rateApp, unrateApp } from "../storage/ratings.js";
+import { attachVideo, detachVideo } from "../storage/appVideos.js";
 import { listAppCategories } from "../storage/appCategories.js";
 import { requireAuth, requireAdmin } from "../middlewares/auth.js";
 import { validateBody } from "../validate.js";
-import { CreateAppBody, UpdateAppBody, SubmitAppBody, SetAppStageBody, RateAppBody } from "@workspace/api-zod";
+import { CreateAppBody, UpdateAppBody, SubmitAppBody, SetAppStageBody, RateAppBody, AttachAppVideoBody } from "@workspace/api-zod";
 import type { AppStage, AppAccessType } from "@workspace/db";
 
 const router = Router();
@@ -87,6 +89,28 @@ router.post("/admin/apps/:id/stage", requireAuth, requireAdmin, validateBody(Set
     return;
   }
   res.json(app);
+});
+
+router.post("/admin/apps/:id/videos", requireAuth, requireAdmin, validateBody(AttachAppVideoBody), async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  await attachVideo(id, req.body, req.user!.id);
+  const app = await getAppBySlugById(id, req.user!.id);
+  res.status(201).json(app);
+});
+
+router.delete("/admin/apps/:id/videos/:videoId", requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const videoId = Number(req.params.videoId);
+  if (isNaN(id) || isNaN(videoId)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  await detachVideo(id, videoId);
+  res.status(204).send();
 });
 
 router.get("/apps/:slug", requireAuth, async (req, res) => {

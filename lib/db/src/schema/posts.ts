@@ -21,6 +21,12 @@ export const postsTable = pgTable("posts", {
    * "Record a banger" flow. NOT a hard FK (would cycle on cascade w/ users).
    */
   recordingId: integer("recording_id"),
+  /**
+   * Optional link to the app this post is about — re-points the existing feed
+   * at the catalog. Nullable: plain community posts have no app. Soft link,
+   * matching recordingId above (a hard FK would cycle on cascade with users).
+   */
+  appId: integer("app_id"),
   tags: text("tags").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

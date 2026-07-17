@@ -21,6 +21,7 @@ import type {
   AppCategory,
   AppDetail,
   AppSummary,
+  AttachVideoRequest,
   ChangePasswordRequest,
   Channel,
   Comment,
@@ -4665,4 +4666,176 @@ export const useUnrateApp = <
   TContext
 > => {
   return useMutation(getUnrateAppMutationOptions(options));
+};
+
+/**
+ * @summary Attach a recording to an app
+ */
+export const getAttachAppVideoUrl = (id: number) => {
+  return `/api/admin/apps/${id}/videos`;
+};
+
+export const attachAppVideo = async (
+  id: number,
+  attachVideoRequest: AttachVideoRequest,
+  options?: RequestInit,
+): Promise<AppDetail> => {
+  return customFetch<AppDetail>(getAttachAppVideoUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(attachVideoRequest),
+  });
+};
+
+export const getAttachAppVideoMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof attachAppVideo>>,
+    TError,
+    { id: number; data: BodyType<AttachVideoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof attachAppVideo>>,
+  TError,
+  { id: number; data: BodyType<AttachVideoRequest> },
+  TContext
+> => {
+  const mutationKey = ["attachAppVideo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof attachAppVideo>>,
+    { id: number; data: BodyType<AttachVideoRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return attachAppVideo(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AttachAppVideoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof attachAppVideo>>
+>;
+export type AttachAppVideoMutationBody = BodyType<AttachVideoRequest>;
+export type AttachAppVideoMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Attach a recording to an app
+ */
+export const useAttachAppVideo = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof attachAppVideo>>,
+    TError,
+    { id: number; data: BodyType<AttachVideoRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof attachAppVideo>>,
+  TError,
+  { id: number; data: BodyType<AttachVideoRequest> },
+  TContext
+> => {
+  return useMutation(getAttachAppVideoMutationOptions(options));
+};
+
+/**
+ * @summary Detach a video from an app
+ */
+export const getDetachAppVideoUrl = (id: number, videoId: number) => {
+  return `/api/admin/apps/${id}/videos/${videoId}`;
+};
+
+export const detachAppVideo = async (
+  id: number,
+  videoId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDetachAppVideoUrl(id, videoId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDetachAppVideoMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof detachAppVideo>>,
+    TError,
+    { id: number; videoId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof detachAppVideo>>,
+  TError,
+  { id: number; videoId: number },
+  TContext
+> => {
+  const mutationKey = ["detachAppVideo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof detachAppVideo>>,
+    { id: number; videoId: number }
+  > = (props) => {
+    const { id, videoId } = props ?? {};
+
+    return detachAppVideo(id, videoId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DetachAppVideoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof detachAppVideo>>
+>;
+
+export type DetachAppVideoMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Detach a video from an app
+ */
+export const useDetachAppVideo = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof detachAppVideo>>,
+    TError,
+    { id: number; videoId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof detachAppVideo>>,
+  TError,
+  { id: number; videoId: number },
+  TContext
+> => {
+  return useMutation(getDetachAppVideoMutationOptions(options));
 };

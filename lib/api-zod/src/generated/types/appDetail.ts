@@ -8,6 +8,7 @@
 import type { AppModule } from "./appModule";
 import type { AppReview } from "./appReview";
 import type { AppSummary } from "./appSummary";
+import type { AppVideo } from "./appVideo";
 
 export type AppDetail = AppSummary & {
   description?: string | null;
@@ -15,4 +16,5 @@ export type AppDetail = AppSummary & {
   screenshots?: string[];
   modules?: AppModule[];
   reviews?: AppReview[];
+  videos?: AppVideo[];
 };

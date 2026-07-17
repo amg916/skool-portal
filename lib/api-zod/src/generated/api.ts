@@ -650,6 +650,22 @@ export const GetAppResponse = zod
           }),
         )
         .optional(),
+      videos: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            recordingId: zod.number(),
+            role: zod.enum(["walkthrough", "demo", "changelog"]),
+            title: zod.string().nullish(),
+            sortOrder: zod.number().optional(),
+            streamUid: zod.string().nullish(),
+            embedUrl: zod.string().nullish(),
+            thumbnailUrl: zod.string().nullish(),
+            durationSec: zod.number().nullish(),
+            transcript: zod.string().nullish(),
+          }),
+        )
+        .optional(),
     }),
   );
 
@@ -739,6 +755,22 @@ export const UpdateAppResponse = zod
             userName: zod.string(),
             userAvatarUrl: zod.string().nullish(),
             createdAt: zod.coerce.date(),
+          }),
+        )
+        .optional(),
+      videos: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            recordingId: zod.number(),
+            role: zod.enum(["walkthrough", "demo", "changelog"]),
+            title: zod.string().nullish(),
+            sortOrder: zod.number().optional(),
+            streamUid: zod.string().nullish(),
+            embedUrl: zod.string().nullish(),
+            thumbnailUrl: zod.string().nullish(),
+            durationSec: zod.number().nullish(),
+            transcript: zod.string().nullish(),
           }),
         )
         .optional(),
@@ -859,6 +891,22 @@ export const SetAppStageResponse = zod
           }),
         )
         .optional(),
+      videos: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            recordingId: zod.number(),
+            role: zod.enum(["walkthrough", "demo", "changelog"]),
+            title: zod.string().nullish(),
+            sortOrder: zod.number().optional(),
+            streamUid: zod.string().nullish(),
+            embedUrl: zod.string().nullish(),
+            thumbnailUrl: zod.string().nullish(),
+            durationSec: zod.number().nullish(),
+            transcript: zod.string().nullish(),
+          }),
+        )
+        .optional(),
     }),
   );
 
@@ -893,4 +941,25 @@ export const UnrateAppResponse = zod.object({
   avgRating: zod.number().nullish(),
   ratingCount: zod.number().optional(),
   myRating: zod.number().nullish(),
+});
+
+/**
+ * @summary Attach a recording to an app
+ */
+export const AttachAppVideoParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AttachAppVideoBody = zod.object({
+  recordingId: zod.number(),
+  role: zod.enum(["walkthrough", "demo", "changelog"]).optional(),
+  title: zod.string().optional(),
+});
+
+/**
+ * @summary Detach a video from an app
+ */
+export const DetachAppVideoParams = zod.object({
+  id: zod.coerce.number(),
+  videoId: zod.coerce.number(),
 });

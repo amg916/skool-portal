@@ -19,3 +19,4 @@ export * from "./apps";
 export * from "./app_modules";
 export * from "./app_votes";
 export * from "./app_ratings";
+export * from "./app_videos";

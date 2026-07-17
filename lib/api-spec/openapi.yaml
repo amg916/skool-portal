@@ -1062,6 +1062,45 @@ paths:
                   avgRating: { type: number, nullable: true }
                   ratingCount: { type: integer }
                   myRating: { type: integer, nullable: true }
+  /admin/apps/{id}/videos:
+    post:
+      operationId: attachAppVideo
+      tags: [apps, admin]
+      summary: Attach a recording to an app
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachVideoRequest"
+      responses:
+        "201":
+          description: Attached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDetail"
+  /admin/apps/{id}/videos/{videoId}:
+    delete:
+      operationId: detachAppVideo
+      tags: [apps, admin]
+      summary: Detach a video from an app
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: videoId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204": { description: Detached }
 components:
   schemas:
     SubmitAppRequest:
@@ -1106,6 +1145,28 @@ components:
       properties:
         rating: { type: integer, minimum: 1, maximum: 5 }
         review: { type: string }
+
+    AppVideo:
+      type: object
+      required: [id, recordingId, role]
+      properties:
+        id: { type: integer }
+        recordingId: { type: integer }
+        role: { type: string, enum: [walkthrough, demo, changelog] }
+        title: { type: string, nullable: true }
+        sortOrder: { type: integer }
+        streamUid: { type: string, nullable: true }
+        embedUrl: { type: string, nullable: true }
+        thumbnailUrl: { type: string, nullable: true }
+        durationSec: { type: integer, nullable: true }
+        transcript: { type: string, nullable: true }
+    AttachVideoRequest:
+      type: object
+      required: [recordingId]
+      properties:
+        recordingId: { type: integer }
+        role: { type: string, enum: [walkthrough, demo, changelog] }
+        title: { type: string }
 
     AppCategory:
       type: object
@@ -1204,6 +1265,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/AppReview"
+            videos:
+              type: array
+              items:
+                $ref: "#/components/schemas/AppVideo"
 
     CreateAppRequest:
       type: object

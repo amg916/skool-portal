@@ -10,6 +10,7 @@ import {
   type AppAccessType,
 } from "@workspace/db";
 import { ratingAggregate, listReviews, type AppReview } from "./ratings.js";
+import { listAppVideos, type AppVideoView } from "./appVideos.js";
 
 export type AppSummary = {
   id: number;
@@ -42,6 +43,7 @@ export type AppDetail = AppSummary & {
   screenshots: string[];
   modules: AppModuleView[];
   reviews?: AppReview[];
+  videos?: AppVideoView[];
 };
 
 const summaryCols = {
@@ -150,6 +152,7 @@ export async function getAppBySlug(slug: string, viewerId?: number): Promise<App
 
   const rating = await ratingAggregate(row.id, viewerId);
   const reviews = row.stage === "graduated" ? await listReviews(row.id) : [];
+  const videos = await listAppVideos(row.id);
 
   return {
     ...row,
@@ -157,6 +160,7 @@ export async function getAppBySlug(slug: string, viewerId?: number): Promise<App
     votedByMe: votes?.votedByMe ?? false,
     ...rating,
     reviews,
+    videos,
     modules,
   };
 }
@@ -202,4 +206,10 @@ export async function retireApp(id: number): Promise<void> {
     .update(appsTable)
     .set({ stage: "retired", updatedAt: new Date() })
     .where(eq(appsTable.id, id));
+}
+
+/** Detail lookup by id (routes that mutate hold an id, not a slug). */
+export async function getAppBySlugById(id: number, viewerId?: number): Promise<AppDetail | null> {
+  const [row] = await db.select({ slug: appsTable.slug }).from(appsTable).where(eq(appsTable.id, id));
+  return row ? getAppBySlug(row.slug, viewerId) : null;
 }
