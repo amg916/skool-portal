@@ -19,4 +19,6 @@ export interface AppSummary {
   stage: AppSummaryStage;
   accessType: AppSummaryAccessType;
   isFirstParty: boolean;
+  voteCount?: number;
+  votedByMe?: boolean;
 }

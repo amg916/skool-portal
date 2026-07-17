@@ -584,6 +584,8 @@ export const ListAppsResponseItem = zod.object({
   ]),
   accessType: zod.enum(["link_out", "provisioned"]),
   isFirstParty: zod.boolean(),
+  voteCount: zod.number().optional(),
+  votedByMe: zod.boolean().optional(),
 });
 export const ListAppsResponse = zod.array(ListAppsResponseItem);
 
@@ -612,6 +614,8 @@ export const GetAppResponse = zod
     ]),
     accessType: zod.enum(["link_out", "provisioned"]),
     isFirstParty: zod.boolean(),
+    voteCount: zod.number().optional(),
+    votedByMe: zod.boolean().optional(),
   })
   .and(
     zod.object({
@@ -687,6 +691,8 @@ export const UpdateAppResponse = zod
     ]),
     accessType: zod.enum(["link_out", "provisioned"]),
     isFirstParty: zod.boolean(),
+    voteCount: zod.number().optional(),
+    votedByMe: zod.boolean().optional(),
   })
   .and(
     zod.object({
@@ -712,3 +718,98 @@ export const UpdateAppResponse = zod
 export const RetireAppParams = zod.object({
   id: zod.coerce.number(),
 });
+
+/**
+ * @summary Member-submit an app to the Incubator
+ */
+
+export const submitAppBodySlugRegExp = new RegExp("^[a-z0-9-]+$");
+
+export const SubmitAppBody = zod.object({
+  name: zod.string().min(1),
+  slug: zod.string().regex(submitAppBodySlugRegExp).optional(),
+  tagline: zod.string().optional(),
+  description: zod.string().optional(),
+  categoryId: zod.number(),
+  externalUrl: zod.string(),
+});
+
+/**
+ * @summary Cast a vote for an incubating app
+ */
+export const VoteAppParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const VoteAppResponse = zod.object({
+  voteCount: zod.number().optional(),
+  votedByMe: zod.boolean().optional(),
+});
+
+/**
+ * @summary Retract a vote
+ */
+export const UnvoteAppParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UnvoteAppResponse = zod.object({
+  voteCount: zod.number().optional(),
+  votedByMe: zod.boolean().optional(),
+});
+
+/**
+ * @summary Set an app's stage (graduate / reject / incubate)
+ */
+export const SetAppStageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SetAppStageBody = zod.object({
+  stage: zod.enum([
+    "submitted",
+    "incubating",
+    "graduated",
+    "rejected",
+    "retired",
+  ]),
+});
+
+export const SetAppStageResponse = zod
+  .object({
+    id: zod.number(),
+    slug: zod.string(),
+    name: zod.string(),
+    tagline: zod.string().nullish(),
+    categoryId: zod.number(),
+    categorySlug: zod.string(),
+    iconUrl: zod.string().nullish(),
+    stage: zod.enum([
+      "submitted",
+      "incubating",
+      "graduated",
+      "retired",
+      "rejected",
+    ]),
+    accessType: zod.enum(["link_out", "provisioned"]),
+    isFirstParty: zod.boolean(),
+    voteCount: zod.number().optional(),
+    votedByMe: zod.boolean().optional(),
+  })
+  .and(
+    zod.object({
+      description: zod.string().nullish(),
+      externalUrl: zod.string().nullish(),
+      screenshots: zod.array(zod.string()).optional(),
+      modules: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            name: zod.string(),
+            description: zod.string().nullish(),
+            sortOrder: zod.number(),
+          }),
+        )
+        .optional(),
+    }),
+  );

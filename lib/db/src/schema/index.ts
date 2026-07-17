@@ -17,3 +17,4 @@ export * from "./recordings";
 export * from "./app_categories";
 export * from "./apps";
 export * from "./app_modules";
+export * from "./app_votes";

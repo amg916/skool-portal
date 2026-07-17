@@ -932,8 +932,116 @@ paths:
         "204":
           description: Retired
 
+  /apps/submit:
+    post:
+      operationId: submitApp
+      tags: [apps]
+      summary: Member-submit an app to the Incubator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAppRequest"
+      responses:
+        "201":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDetail"
+  /apps/{id}/vote:
+    post:
+      operationId: voteApp
+      tags: [apps]
+      summary: Cast a vote for an incubating app
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Voted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  voteCount: { type: integer }
+                  votedByMe: { type: boolean }
+        "409": { description: App is not votable }
+    delete:
+      operationId: unvoteApp
+      tags: [apps]
+      summary: Retract a vote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Retracted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  voteCount: { type: integer }
+                  votedByMe: { type: boolean }
+  /admin/apps/{id}/stage:
+    post:
+      operationId: setAppStage
+      tags: [apps, admin]
+      summary: Set an app's stage (graduate / reject / incubate)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetStageRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDetail"
+        "404": { description: Not found }
 components:
   schemas:
+    SubmitAppRequest:
+      type: object
+      required: [name, categoryId, externalUrl]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          pattern: "^[a-z0-9-]+$"
+        tagline:
+          type: string
+        description:
+          type: string
+        categoryId:
+          type: integer
+        externalUrl:
+          type: string
+    SetStageRequest:
+      type: object
+      required: [stage]
+      properties:
+        stage:
+          type: string
+          enum: [submitted, incubating, graduated, rejected, retired]
+
     AppCategory:
       type: object
       required: [id, slug, name, sortOrder]
@@ -994,6 +1102,10 @@ components:
           type: string
           enum: [link_out, provisioned]
         isFirstParty:
+          type: boolean
+        voteCount:
+          type: integer
+        votedByMe:
           type: boolean
 
     AppDetail:

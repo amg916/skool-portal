@@ -43,8 +43,11 @@ import type {
   ReorderRequest,
   ResetPasswordResponse,
   Segment,
+  SetStageRequest,
+  SubmitAppRequest,
   Subsection,
   ToggleCompletionRequest,
+  UnvoteApp200,
   UpdateAppRequest,
   UpdateChannelRequest,
   UpdateLessonRequest,
@@ -52,6 +55,7 @@ import type {
   UpdateSubsectionRequest,
   UploadResult,
   User,
+  VoteApp200,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -4146,4 +4150,345 @@ export const useRetireApp = <
   TContext
 > => {
   return useMutation(getRetireAppMutationOptions(options));
+};
+
+/**
+ * @summary Member-submit an app to the Incubator
+ */
+export const getSubmitAppUrl = () => {
+  return `/api/apps/submit`;
+};
+
+export const submitApp = async (
+  submitAppRequest: SubmitAppRequest,
+  options?: RequestInit,
+): Promise<AppDetail> => {
+  return customFetch<AppDetail>(getSubmitAppUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitAppRequest),
+  });
+};
+
+export const getSubmitAppMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitApp>>,
+    TError,
+    { data: BodyType<SubmitAppRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitApp>>,
+  TError,
+  { data: BodyType<SubmitAppRequest> },
+  TContext
+> => {
+  const mutationKey = ["submitApp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitApp>>,
+    { data: BodyType<SubmitAppRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return submitApp(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitAppMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitApp>>
+>;
+export type SubmitAppMutationBody = BodyType<SubmitAppRequest>;
+export type SubmitAppMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Member-submit an app to the Incubator
+ */
+export const useSubmitApp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitApp>>,
+    TError,
+    { data: BodyType<SubmitAppRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitApp>>,
+  TError,
+  { data: BodyType<SubmitAppRequest> },
+  TContext
+> => {
+  return useMutation(getSubmitAppMutationOptions(options));
+};
+
+/**
+ * @summary Cast a vote for an incubating app
+ */
+export const getVoteAppUrl = (id: number) => {
+  return `/api/apps/${id}/vote`;
+};
+
+export const voteApp = async (
+  id: number,
+  options?: RequestInit,
+): Promise<VoteApp200> => {
+  return customFetch<VoteApp200>(getVoteAppUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getVoteAppMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof voteApp>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof voteApp>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["voteApp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof voteApp>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return voteApp(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VoteAppMutationResult = NonNullable<
+  Awaited<ReturnType<typeof voteApp>>
+>;
+
+export type VoteAppMutationError = ErrorType<void>;
+
+/**
+ * @summary Cast a vote for an incubating app
+ */
+export const useVoteApp = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof voteApp>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof voteApp>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getVoteAppMutationOptions(options));
+};
+
+/**
+ * @summary Retract a vote
+ */
+export const getUnvoteAppUrl = (id: number) => {
+  return `/api/apps/${id}/vote`;
+};
+
+export const unvoteApp = async (
+  id: number,
+  options?: RequestInit,
+): Promise<UnvoteApp200> => {
+  return customFetch<UnvoteApp200>(getUnvoteAppUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getUnvoteAppMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unvoteApp>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof unvoteApp>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["unvoteApp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof unvoteApp>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return unvoteApp(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UnvoteAppMutationResult = NonNullable<
+  Awaited<ReturnType<typeof unvoteApp>>
+>;
+
+export type UnvoteAppMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Retract a vote
+ */
+export const useUnvoteApp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unvoteApp>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof unvoteApp>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getUnvoteAppMutationOptions(options));
+};
+
+/**
+ * @summary Set an app's stage (graduate / reject / incubate)
+ */
+export const getSetAppStageUrl = (id: number) => {
+  return `/api/admin/apps/${id}/stage`;
+};
+
+export const setAppStage = async (
+  id: number,
+  setStageRequest: SetStageRequest,
+  options?: RequestInit,
+): Promise<AppDetail> => {
+  return customFetch<AppDetail>(getSetAppStageUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setStageRequest),
+  });
+};
+
+export const getSetAppStageMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setAppStage>>,
+    TError,
+    { id: number; data: BodyType<SetStageRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setAppStage>>,
+  TError,
+  { id: number; data: BodyType<SetStageRequest> },
+  TContext
+> => {
+  const mutationKey = ["setAppStage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setAppStage>>,
+    { id: number; data: BodyType<SetStageRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return setAppStage(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetAppStageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setAppStage>>
+>;
+export type SetAppStageMutationBody = BodyType<SetStageRequest>;
+export type SetAppStageMutationError = ErrorType<void>;
+
+/**
+ * @summary Set an app's stage (graduate / reject / incubate)
+ */
+export const useSetAppStage = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setAppStage>>,
+    TError,
+    { id: number; data: BodyType<SetStageRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setAppStage>>,
+  TError,
+  { id: number; data: BodyType<SetStageRequest> },
+  TContext
+> => {
+  return useMutation(getSetAppStageMutationOptions(options));
 };

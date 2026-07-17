@@ -5,6 +5,32 @@
  * Community & School Portal API
  * OpenAPI spec version: 0.1.0
  */
+export interface SubmitAppRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @pattern ^[a-z0-9-]+$ */
+  slug?: string;
+  tagline?: string;
+  description?: string;
+  categoryId: number;
+  externalUrl: string;
+}
+
+export type SetStageRequestStage =
+  (typeof SetStageRequestStage)[keyof typeof SetStageRequestStage];
+
+export const SetStageRequestStage = {
+  submitted: "submitted",
+  incubating: "incubating",
+  graduated: "graduated",
+  rejected: "rejected",
+  retired: "retired",
+} as const;
+
+export interface SetStageRequest {
+  stage: SetStageRequestStage;
+}
+
 export interface AppCategory {
   id: number;
   slug: string;
@@ -51,6 +77,8 @@ export interface AppSummary {
   stage: AppSummaryStage;
   accessType: AppSummaryAccessType;
   isFirstParty: boolean;
+  voteCount?: number;
+  votedByMe?: boolean;
 }
 
 export type AppDetail = AppSummary & {
@@ -386,3 +414,13 @@ export const ListAppsStage = {
   retired: "retired",
   rejected: "rejected",
 } as const;
+
+export type VoteApp200 = {
+  voteCount?: number;
+  votedByMe?: boolean;
+};
+
+export type UnvoteApp200 = {
+  voteCount?: number;
+  votedByMe?: boolean;
+};
