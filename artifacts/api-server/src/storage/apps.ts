@@ -1,9 +1,10 @@
-import { eq, and, asc, ilike } from "drizzle-orm";
+import { eq, and, asc, desc, ilike, sql } from "drizzle-orm";
 import {
   db,
   appsTable,
   appCategoriesTable,
   appModulesTable,
+  appVotesTable,
   type AppStage,
   type AppAccessType,
 } from "@workspace/db";
@@ -19,6 +20,8 @@ export type AppSummary = {
   stage: string;
   accessType: string;
   isFirstParty: boolean;
+  voteCount?: number;
+  votedByMe?: boolean;
 };
 
 export type AppModuleView = {
@@ -52,17 +55,40 @@ export async function listApps(opts: {
   category?: string;
   stage?: AppStage;
   q?: string;
+  viewerId?: number;
 }): Promise<AppSummary[]> {
-  const filters = [eq(appsTable.stage, opts.stage ?? "graduated")];
+  const stage = opts.stage ?? "graduated";
+  const filters = [eq(appsTable.stage, stage)];
   if (opts.category) filters.push(eq(appCategoriesTable.slug, opts.category));
   if (opts.q) filters.push(ilike(appsTable.name, `%${opts.q}%`));
 
-  return db
-    .select(summaryCols)
+  // Vote-aware listing (the Incubator surface): include a vote count and, when a
+  // viewer is known, whether they voted; rank by votes desc. The Catalog
+  // (graduated) keeps its category/name ordering and omits vote fields.
+  const withVotes = stage !== "graduated";
+  const voteCount = sql<number>`count(${appVotesTable.id})::int`;
+  const votedByMe = opts.viewerId
+    ? sql<boolean>`bool_or(${appVotesTable.userId} = ${opts.viewerId})`
+    : sql<boolean>`false`;
+
+  if (!withVotes) {
+    return db
+      .select(summaryCols)
+      .from(appsTable)
+      .innerJoin(appCategoriesTable, eq(appsTable.categoryId, appCategoriesTable.id))
+      .where(and(...filters))
+      .orderBy(asc(appCategoriesTable.sortOrder), asc(appsTable.name));
+  }
+
+  const rows = await db
+    .select({ ...summaryCols, voteCount, votedByMe })
     .from(appsTable)
     .innerJoin(appCategoriesTable, eq(appsTable.categoryId, appCategoriesTable.id))
+    .leftJoin(appVotesTable, eq(appVotesTable.appId, appsTable.id))
     .where(and(...filters))
-    .orderBy(asc(appCategoriesTable.sortOrder), asc(appsTable.name));
+    .groupBy(appsTable.id, appCategoriesTable.id)
+    .orderBy(desc(voteCount), asc(appsTable.name));
+  return rows.map((r) => ({ ...r, voteCount: r.voteCount ?? 0, votedByMe: r.votedByMe ?? false }));
 }
 
 export async function getAppBySlug(slug: string): Promise<AppDetail | null> {
