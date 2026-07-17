@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AppModule } from "./appModule";
+import type { AppReview } from "./appReview";
 import type { AppSummary } from "./appSummary";
 
 export type AppDetail = AppSummary & {
@@ -13,4 +14,5 @@ export type AppDetail = AppSummary & {
   externalUrl?: string | null;
   screenshots?: string[];
   modules?: AppModule[];
+  reviews?: AppReview[];
 };

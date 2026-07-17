@@ -5,9 +5,11 @@ import {
   appCategoriesTable,
   appModulesTable,
   appVotesTable,
+  appRatingsTable,
   type AppStage,
   type AppAccessType,
 } from "@workspace/db";
+import { ratingAggregate, listReviews, type AppReview } from "./ratings.js";
 
 export type AppSummary = {
   id: number;
@@ -22,6 +24,9 @@ export type AppSummary = {
   isFirstParty: boolean;
   voteCount?: number;
   votedByMe?: boolean;
+  avgRating?: number | null;
+  ratingCount?: number;
+  myRating?: number | null;
 };
 
 export type AppModuleView = {
@@ -36,6 +41,7 @@ export type AppDetail = AppSummary & {
   externalUrl: string | null;
   screenshots: string[];
   modules: AppModuleView[];
+  reviews?: AppReview[];
 };
 
 const summaryCols = {
@@ -72,12 +78,28 @@ export async function listApps(opts: {
     : sql<boolean>`false`;
 
   if (!withVotes) {
-    return db
-      .select(summaryCols)
+    // Catalog: category/name ordering, with the rating aggregate (graduated apps
+    // are rated, not voted).
+    const rated = await db
+      .select({
+        ...summaryCols,
+        avgRating: sql<number | null>`avg(${appRatingsTable.rating})::float`,
+        ratingCount: sql<number>`count(${appRatingsTable.id})::int`,
+        myRating: opts.viewerId
+          ? sql<number | null>`max(${appRatingsTable.rating}) filter (where ${appRatingsTable.userId} = ${opts.viewerId})`
+          : sql<number | null>`null::int`,
+      })
       .from(appsTable)
       .innerJoin(appCategoriesTable, eq(appsTable.categoryId, appCategoriesTable.id))
+      .leftJoin(appRatingsTable, eq(appRatingsTable.appId, appsTable.id))
       .where(and(...filters))
+      .groupBy(appsTable.id, appCategoriesTable.id)
       .orderBy(asc(appCategoriesTable.sortOrder), asc(appsTable.name));
+    return rated.map((r) => ({
+      ...r,
+      avgRating: r.avgRating != null ? Math.round(r.avgRating * 10) / 10 : null,
+      ratingCount: r.ratingCount ?? 0,
+    }));
   }
 
   const rows = await db
@@ -126,10 +148,15 @@ export async function getAppBySlug(slug: string, viewerId?: number): Promise<App
     .where(eq(appModulesTable.appId, row.id))
     .orderBy(asc(appModulesTable.sortOrder));
 
+  const rating = await ratingAggregate(row.id, viewerId);
+  const reviews = row.stage === "graduated" ? await listReviews(row.id) : [];
+
   return {
     ...row,
     voteCount: votes?.voteCount ?? 0,
     votedByMe: votes?.votedByMe ?? false,
+    ...rating,
+    reviews,
     modules,
   };
 }

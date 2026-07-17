@@ -40,6 +40,8 @@ import type {
   LoginRequest,
   Post,
   ProgressRollup,
+  RateApp200,
+  RateAppRequest,
   ReorderRequest,
   ResetPasswordResponse,
   Segment,
@@ -47,6 +49,7 @@ import type {
   SubmitAppRequest,
   Subsection,
   ToggleCompletionRequest,
+  UnrateApp200,
   UnvoteApp200,
   UpdateAppRequest,
   UpdateChannelRequest,
@@ -4491,4 +4494,175 @@ export const useSetAppStage = <
   TContext
 > => {
   return useMutation(getSetAppStageMutationOptions(options));
+};
+
+/**
+ * @summary Rate a graduated app (upsert — one rating per user per app)
+ */
+export const getRateAppUrl = (id: number) => {
+  return `/api/apps/${id}/rating`;
+};
+
+export const rateApp = async (
+  id: number,
+  rateAppRequest: RateAppRequest,
+  options?: RequestInit,
+): Promise<RateApp200> => {
+  return customFetch<RateApp200>(getRateAppUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rateAppRequest),
+  });
+};
+
+export const getRateAppMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rateApp>>,
+    TError,
+    { id: number; data: BodyType<RateAppRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof rateApp>>,
+  TError,
+  { id: number; data: BodyType<RateAppRequest> },
+  TContext
+> => {
+  const mutationKey = ["rateApp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof rateApp>>,
+    { id: number; data: BodyType<RateAppRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return rateApp(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RateAppMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rateApp>>
+>;
+export type RateAppMutationBody = BodyType<RateAppRequest>;
+export type RateAppMutationError = ErrorType<void>;
+
+/**
+ * @summary Rate a graduated app (upsert — one rating per user per app)
+ */
+export const useRateApp = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rateApp>>,
+    TError,
+    { id: number; data: BodyType<RateAppRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof rateApp>>,
+  TError,
+  { id: number; data: BodyType<RateAppRequest> },
+  TContext
+> => {
+  return useMutation(getRateAppMutationOptions(options));
+};
+
+/**
+ * @summary Remove your rating
+ */
+export const getUnrateAppUrl = (id: number) => {
+  return `/api/apps/${id}/rating`;
+};
+
+export const unrateApp = async (
+  id: number,
+  options?: RequestInit,
+): Promise<UnrateApp200> => {
+  return customFetch<UnrateApp200>(getUnrateAppUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getUnrateAppMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unrateApp>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof unrateApp>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["unrateApp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof unrateApp>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return unrateApp(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UnrateAppMutationResult = NonNullable<
+  Awaited<ReturnType<typeof unrateApp>>
+>;
+
+export type UnrateAppMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove your rating
+ */
+export const useUnrateApp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unrateApp>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof unrateApp>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getUnrateAppMutationOptions(options));
 };

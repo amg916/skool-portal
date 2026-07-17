@@ -7,10 +7,11 @@ import {
   retireApp,
 } from "../storage/apps.js";
 import { submitApp, voteApp, unvoteApp, setStage } from "../storage/incubator.js";
+import { rateApp, unrateApp } from "../storage/ratings.js";
 import { listAppCategories } from "../storage/appCategories.js";
 import { requireAuth, requireAdmin } from "../middlewares/auth.js";
 import { validateBody } from "../validate.js";
-import { CreateAppBody, UpdateAppBody, SubmitAppBody, SetAppStageBody } from "@workspace/api-zod";
+import { CreateAppBody, UpdateAppBody, SubmitAppBody, SetAppStageBody, RateAppBody } from "@workspace/api-zod";
 import type { AppStage, AppAccessType } from "@workspace/db";
 
 const router = Router();
@@ -50,6 +51,28 @@ router.delete("/apps/:id/vote", requireAuth, async (req, res) => {
     return;
   }
   res.json(await unvoteApp(id, req.user!.id));
+});
+
+router.put("/apps/:id/rating", requireAuth, validateBody(RateAppBody), async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  try {
+    res.json(await rateApp(id, req.user!.id, req.body));
+  } catch (e) {
+    res.status(409).json({ error: e instanceof Error ? e.message : "Not rateable" });
+  }
+});
+
+router.delete("/apps/:id/rating", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  res.json(await unrateApp(id, req.user!.id));
 });
 
 router.post("/admin/apps/:id/stage", requireAuth, requireAdmin, validateBody(SetAppStageBody), async (req, res) => {

@@ -1014,6 +1014,54 @@ paths:
               schema:
                 $ref: "#/components/schemas/AppDetail"
         "404": { description: Not found }
+  /apps/{id}/rating:
+    put:
+      operationId: rateApp
+      tags: [apps]
+      summary: Rate a graduated app (upsert — one rating per user per app)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RateAppRequest"
+      responses:
+        "200":
+          description: Rated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  avgRating: { type: number, nullable: true }
+                  ratingCount: { type: integer }
+                  myRating: { type: integer, nullable: true }
+        "409": { description: App is not rateable (only graduated apps) }
+    delete:
+      operationId: unrateApp
+      tags: [apps]
+      summary: Remove your rating
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  avgRating: { type: number, nullable: true }
+                  ratingCount: { type: integer }
+                  myRating: { type: integer, nullable: true }
 components:
   schemas:
     SubmitAppRequest:
@@ -1041,6 +1089,23 @@ components:
         stage:
           type: string
           enum: [submitted, incubating, graduated, rejected, retired]
+
+    AppReview:
+      type: object
+      required: [id, rating, userName, createdAt]
+      properties:
+        id: { type: integer }
+        rating: { type: integer }
+        review: { type: string, nullable: true }
+        userName: { type: string }
+        userAvatarUrl: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+    RateAppRequest:
+      type: object
+      required: [rating]
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        review: { type: string }
 
     AppCategory:
       type: object
@@ -1107,6 +1172,14 @@ components:
           type: integer
         votedByMe:
           type: boolean
+        avgRating:
+          type: number
+          nullable: true
+        ratingCount:
+          type: integer
+        myRating:
+          type: integer
+          nullable: true
 
     AppDetail:
       allOf:
@@ -1127,6 +1200,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/AppModule"
+            reviews:
+              type: array
+              items:
+                $ref: "#/components/schemas/AppReview"
 
     CreateAppRequest:
       type: object

@@ -586,6 +586,9 @@ export const ListAppsResponseItem = zod.object({
   isFirstParty: zod.boolean(),
   voteCount: zod.number().optional(),
   votedByMe: zod.boolean().optional(),
+  avgRating: zod.number().nullish(),
+  ratingCount: zod.number().optional(),
+  myRating: zod.number().nullish(),
 });
 export const ListAppsResponse = zod.array(ListAppsResponseItem);
 
@@ -616,6 +619,9 @@ export const GetAppResponse = zod
     isFirstParty: zod.boolean(),
     voteCount: zod.number().optional(),
     votedByMe: zod.boolean().optional(),
+    avgRating: zod.number().nullish(),
+    ratingCount: zod.number().optional(),
+    myRating: zod.number().nullish(),
   })
   .and(
     zod.object({
@@ -629,6 +635,18 @@ export const GetAppResponse = zod
             name: zod.string(),
             description: zod.string().nullish(),
             sortOrder: zod.number(),
+          }),
+        )
+        .optional(),
+      reviews: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            rating: zod.number(),
+            review: zod.string().nullish(),
+            userName: zod.string(),
+            userAvatarUrl: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
           }),
         )
         .optional(),
@@ -693,6 +711,9 @@ export const UpdateAppResponse = zod
     isFirstParty: zod.boolean(),
     voteCount: zod.number().optional(),
     votedByMe: zod.boolean().optional(),
+    avgRating: zod.number().nullish(),
+    ratingCount: zod.number().optional(),
+    myRating: zod.number().nullish(),
   })
   .and(
     zod.object({
@@ -706,6 +727,18 @@ export const UpdateAppResponse = zod
             name: zod.string(),
             description: zod.string().nullish(),
             sortOrder: zod.number(),
+          }),
+        )
+        .optional(),
+      reviews: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            rating: zod.number(),
+            review: zod.string().nullish(),
+            userName: zod.string(),
+            userAvatarUrl: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
           }),
         )
         .optional(),
@@ -795,6 +828,9 @@ export const SetAppStageResponse = zod
     isFirstParty: zod.boolean(),
     voteCount: zod.number().optional(),
     votedByMe: zod.boolean().optional(),
+    avgRating: zod.number().nullish(),
+    ratingCount: zod.number().optional(),
+    myRating: zod.number().nullish(),
   })
   .and(
     zod.object({
@@ -811,5 +847,50 @@ export const SetAppStageResponse = zod
           }),
         )
         .optional(),
+      reviews: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            rating: zod.number(),
+            review: zod.string().nullish(),
+            userName: zod.string(),
+            userAvatarUrl: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
+          }),
+        )
+        .optional(),
     }),
   );
+
+/**
+ * @summary Rate a graduated app (upsert — one rating per user per app)
+ */
+export const RateAppParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const rateAppBodyRatingMax = 5;
+
+export const RateAppBody = zod.object({
+  rating: zod.number().min(1).max(rateAppBodyRatingMax),
+  review: zod.string().optional(),
+});
+
+export const RateAppResponse = zod.object({
+  avgRating: zod.number().nullish(),
+  ratingCount: zod.number().optional(),
+  myRating: zod.number().nullish(),
+});
+
+/**
+ * @summary Remove your rating
+ */
+export const UnrateAppParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UnrateAppResponse = zod.object({
+  avgRating: zod.number().nullish(),
+  ratingCount: zod.number().optional(),
+  myRating: zod.number().nullish(),
+});

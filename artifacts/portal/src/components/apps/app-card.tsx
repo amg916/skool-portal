@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Stars } from "@/components/apps/star-rating";
 import type { AppSummary } from "@workspace/api-client-react";
 
 export function AppCard({ app }: { app: AppSummary }) {
@@ -28,9 +29,17 @@ export function AppCard({ app }: { app: AppSummary }) {
             {app.tagline && (
               <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{app.tagline}</p>
             )}
-            <Badge variant="outline" className="mt-2 text-[10px] capitalize">
-              {app.categorySlug}
-            </Badge>
+            <div className="mt-2 flex items-center gap-2">
+              <Badge variant="outline" className="text-[10px] capitalize">
+                {app.categorySlug}
+              </Badge>
+              {!!app.ratingCount && (
+                <span className="flex items-center gap-1">
+                  <Stars value={app.avgRating ?? 0} />
+                  <span className="text-[10px] text-muted-foreground">({app.ratingCount})</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </Card>

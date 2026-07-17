@@ -31,6 +31,24 @@ export interface SetStageRequest {
   stage: SetStageRequestStage;
 }
 
+export interface AppReview {
+  id: number;
+  rating: number;
+  review?: string | null;
+  userName: string;
+  userAvatarUrl?: string | null;
+  createdAt: string;
+}
+
+export interface RateAppRequest {
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  rating: number;
+  review?: string;
+}
+
 export interface AppCategory {
   id: number;
   slug: string;
@@ -79,6 +97,9 @@ export interface AppSummary {
   isFirstParty: boolean;
   voteCount?: number;
   votedByMe?: boolean;
+  avgRating?: number | null;
+  ratingCount?: number;
+  myRating?: number | null;
 }
 
 export type AppDetail = AppSummary & {
@@ -86,6 +107,7 @@ export type AppDetail = AppSummary & {
   externalUrl?: string | null;
   screenshots?: string[];
   modules?: AppModule[];
+  reviews?: AppReview[];
 };
 
 export type CreateAppRequestStage =
@@ -423,4 +445,16 @@ export type VoteApp200 = {
 export type UnvoteApp200 = {
   voteCount?: number;
   votedByMe?: boolean;
+};
+
+export type RateApp200 = {
+  avgRating?: number | null;
+  ratingCount?: number;
+  myRating?: number | null;
+};
+
+export type UnrateApp200 = {
+  avgRating?: number | null;
+  ratingCount?: number;
+  myRating?: number | null;
 };

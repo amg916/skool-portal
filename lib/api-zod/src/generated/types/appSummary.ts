@@ -21,4 +21,7 @@ export interface AppSummary {
   isFirstParty: boolean;
   voteCount?: number;
   votedByMe?: boolean;
+  avgRating?: number | null;
+  ratingCount?: number;
+  myRating?: number | null;
 }
