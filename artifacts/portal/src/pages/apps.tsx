@@ -3,6 +3,7 @@ import { LayoutGrid, Loader2 } from "lucide-react";
 import { useListApps } from "@workspace/api-client-react";
 import { AppCard } from "@/components/apps/app-card";
 import { CategoryRail } from "@/components/apps/category-rail";
+import { SubmitAppDialog } from "@/components/apps/submit-app-dialog";
 
 export default function AppsPage() {
   const [category, setCategory] = useState<string | undefined>(undefined);
@@ -10,9 +11,12 @@ export default function AppsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
-      <div className="flex items-center gap-2">
-        <LayoutGrid className="h-5 w-5 text-muted-foreground" />
-        <h1 className="text-2xl font-semibold">Apps</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+          <h1 className="text-2xl font-semibold">Apps</h1>
+        </div>
+        <SubmitAppDialog />
       </div>
 
       <CategoryRail active={category} onSelect={setCategory} />

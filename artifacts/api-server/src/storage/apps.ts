@@ -91,7 +91,7 @@ export async function listApps(opts: {
   return rows.map((r) => ({ ...r, voteCount: r.voteCount ?? 0, votedByMe: r.votedByMe ?? false }));
 }
 
-export async function getAppBySlug(slug: string): Promise<AppDetail | null> {
+export async function getAppBySlug(slug: string, viewerId?: number): Promise<AppDetail | null> {
   const [row] = await db
     .select({
       ...summaryCols,
@@ -105,6 +105,16 @@ export async function getAppBySlug(slug: string): Promise<AppDetail | null> {
 
   if (!row) return null;
 
+  const [votes] = await db
+    .select({
+      voteCount: sql<number>`count(${appVotesTable.id})::int`,
+      votedByMe: viewerId
+        ? sql<boolean>`bool_or(${appVotesTable.userId} = ${viewerId})`
+        : sql<boolean>`false`,
+    })
+    .from(appVotesTable)
+    .where(eq(appVotesTable.appId, row.id));
+
   const modules = await db
     .select({
       id: appModulesTable.id,
@@ -116,7 +126,12 @@ export async function getAppBySlug(slug: string): Promise<AppDetail | null> {
     .where(eq(appModulesTable.appId, row.id))
     .orderBy(asc(appModulesTable.sortOrder));
 
-  return { ...row, modules };
+  return {
+    ...row,
+    voteCount: votes?.voteCount ?? 0,
+    votedByMe: votes?.votedByMe ?? false,
+    modules,
+  };
 }
 
 export type CreateAppInput = {

@@ -67,7 +67,7 @@ router.post("/admin/apps/:id/stage", requireAuth, requireAdmin, validateBody(Set
 });
 
 router.get("/apps/:slug", requireAuth, async (req, res) => {
-  const app = await getAppBySlug(String(req.params.slug));
+  const app = await getAppBySlug(String(req.params.slug), req.user!.id);
   if (!app) {
     res.status(404).json({ error: "Not found" });
     return;

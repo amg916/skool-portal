@@ -16,6 +16,7 @@ import ForceChangePasswordPage from "@/pages/force-change-password";
 import CommunityPage from "@/pages/community";
 import AppsPage from "@/pages/apps";
 import AppDetailPage from "@/pages/app-detail";
+import IncubatorPage from "@/pages/incubator";
 import SchoolPage from "@/pages/school";
 import SchoolSegmentPage from "@/pages/school-segment";
 import SchoolSubsectionPage from "@/pages/school-subsection";
@@ -66,6 +67,14 @@ function Router() {
         <AuthGuard>
           <AppLayout>
             <AppsPage />
+          </AppLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/incubator">
+        <AuthGuard>
+          <AppLayout>
+            <IncubatorPage />
           </AppLayout>
         </AuthGuard>
       </Route>

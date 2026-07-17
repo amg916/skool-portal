@@ -26,6 +26,7 @@ import { useQuery } from "@tanstack/react-query";
 
 const SUB_NAV = [
   { href: "/apps", label: "Apps" },
+  { href: "/incubator", label: "Incubator" },
   { href: "/community", label: "Community" },
   { href: "/school", label: "Classroom" },
   { href: "/calendar", label: "Calendar" },
